@@ -1,0 +1,66 @@
+---
+title: "Semester Project Part 1 Camille Leonard"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.width = 7,
+                      fig.height=7)
+```
+
+```{r}
+library(tidyverse)
+library(MASS)
+library(ggplot2)
+library(GGally)
+library(yardstick) #for ROC curves...?
+library(caret)
+```
+
+```{r}
+df <- tibble(read.csv("HaitiPixels.csv"))
+summary(df)
+ggpairs(df[,2:4], lower.panel = NULL)
+attach(df)
+```
+
+```{r}
+par(las=2)
+boxplot(Red~Class)
+boxplot(Green~Class)
+boxplot(Blue~Class)
+```
+
+```{r}
+df <- cbind(mutate(df, "Blue_Tarp_or_Not"=ifelse(Class != "Blue Tarp", 0, 1)))
+df
+attach(df)
+```
+
+
+```{r}
+set.seed(4)
+trainIndex <- createDataPartition(Class, p=0.8,
+                                  list=FALSE,
+                                  times=1)
+
+blueTarpTrain <- df[trainIndex,]
+blueTarpTest <- df[-trainIndex,]
+
+```
+
+
+```{r}
+glm.fit <- glm(Blue_Tarp_or_Not~Red+Green+Blue, family = binomial, data=blueTarpTrain)
+summary(glm.fit)
+glm.pred <- predict(glm.fit, blueTarpTest, type = "response")
+cm.glm <- confusionMatrix(factor(glm.pred), factor(blueTarpTest$Blue_Tarp_or_Not)) #for some reason the glm.pred values are not 0 or 1... 
+cm.glm
+```
+
+One vs the rest for logistic regression of different classes 
