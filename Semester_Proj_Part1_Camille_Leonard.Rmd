@@ -26,14 +26,24 @@ library(caret)
 df <- tibble(read.csv("HaitiPixels.csv"))
 summary(df)
 ggpairs(df[,2:4], lower.panel = NULL)
+df$Class <- factor(df$Class)
 attach(df)
 ```
 
 ```{r}
-par(las=2)
-boxplot(Red~Class)
-boxplot(Green~Class)
-boxplot(Blue~Class)
+
+#par(las=2)
+#boxplot(Red~Class)
+#boxplot(Green~Class)
+#boxplot(Blue~Class)
+
+
+featurePlot(x = df[,2:4],
+            y = df$Class,
+            plot = "box",
+            layout = c(3,1), 
+            scales = list(y = list(relation = "free"),
+                          x = list(rot = 90)))
 ```
 
 ```{r}
