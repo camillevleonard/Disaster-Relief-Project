@@ -3,9 +3,6 @@ title: "Semester Project Part 1 Camille Leonard"
 output: html_notebook
 ---
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
-
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
 
 ```{r}
 knitr::opts_chunk$set(error=TRUE,        # Keep compiling upon error
@@ -27,6 +24,7 @@ library(GGally)
 library(yardstick) #for ROC curves...?
 library(caret)
 library(pROC)
+library(class)
 ```
 
 ```{r}
@@ -56,10 +54,11 @@ featurePlot(x = df[,2:4],
 
 ```{r}
 df <- cbind(mutate(df, "Blue_Tarp_or_Not"=ifelse(Class != "Blue Tarp", 0, 1)))
+attach(df)
 Blue_Tarp_or_Not <- as.factor(Blue_Tarp_or_Not)
 df
 tail(df)
-attach(df)
+
 ```
 
 
@@ -71,8 +70,11 @@ trainIndex <- createDataPartition(Class, p=0.8,
 
 blueTarpTrain <- df[trainIndex,]
 blueTarpTrain$Blue_Tarp_or_Not <- as.factor(blueTarpTrain$Blue_Tarp_or_Not)
+blueTarpTrain <- blueTarpTrain[,-1]
 blueTarpTest <- df[-trainIndex,]
 blueTarpTest$Blue_Tarp_or_Not <- as.factor(blueTarpTest$Blue_Tarp_or_Not)
+blueTarpTest <- blueTarpTest[,-1]
+
 ```
 
 
@@ -85,7 +87,9 @@ glm.prob <- predict(glm.fit, blueTarpTest, type = "response")
 glm.pred=ifelse(glm.prob>0.5,1,0)
 cm.glm <- confusionMatrix(factor(glm.pred), factor(blueTarpTest$Blue_Tarp_or_Not)) 
 cm.glm
-#roc(blueTarpTest$Blue_Tarp_or_Not,  ) need to work on this one
+
+par(pty="s")
+roc(blueTarpTest$Blue_Tarp_or_Not, glm.pred, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE) #need to work on this one
 ```
 
 One vs the rest for logistic regression of different classes 
@@ -109,6 +113,9 @@ lda.fit <- caret::train(Blue_Tarp_or_Not~Red+Green+Blue,
 
 lda.fit
 
+par(pty="s")
+roc(blueTarpTest$Blue_Tarp_or_Not, lda.fit$fitted.values, plot=TRUE, print.auc=TRUE, col="purple") 
+
 ```
 
 ##QDA 
@@ -130,19 +137,31 @@ qda.fit
 
 
 ```
+## Base R KNN
+```{r}
 
-##KNN
+knn.pred<-knn(data.frame(blueTarpTrain), data.frame(blueTarpTest), blueTarpTrain$Blue_Tarp_or_Not, k=10)
+#summary(knn.pred)
+cm.knn <- confusionMatrix(knn.pred, blueTarpTest$Blue_Tarp_or_Not)
+cm.knn
+
+table(knn.pred, blueTarpTest$Blue_Tarp_or_Not)
+mean(knn.pred==blueTarpTest$Blue_Tarp_or_Not)
+```
+
+
+
+## KNN
 ```{r}
 fitControl <- trainControl(method = "repeatedcv",
-                           number = 10,
-                           repeats = 10)
+                           number = 10, #number of folds
+                           repeats = 10) # number of times each fold is run; can the number of repeats be reduced? do both of these need to be 10?
 
 set.seed(4)
 knn.fit <- train(Blue_Tarp_or_Not~Red+Green+Blue,
                     data = blueTarpTrain,
                     preProcess=c("center","scale"),
                     method="knn",
-                    verbose= FALSE,
                     trControl= fitControl,
                     tuneLength=10
                     )
