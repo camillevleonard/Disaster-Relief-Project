@@ -25,6 +25,7 @@ library(yardstick) #for ROC curves...?
 library(caret)
 library(pROC)
 library(class)
+library(stats)
 ```
 
 ```{r}
@@ -81,6 +82,8 @@ blueTarpTest <- blueTarpTest[,-1]
 ##Logistic Regression 
 
 ```{r}
+#need to do CV on the GLM model... 
+
 glm.fit <- glm(Blue_Tarp_or_Not~Red+Green+Blue, family = binomial, data=blueTarpTrain)
 summary(glm.fit)
 glm.prob <- predict(glm.fit, blueTarpTest, type = "response")
@@ -112,9 +115,68 @@ lda.fit <- caret::train(Blue_Tarp_or_Not~Red+Green+Blue,
                     trControl= fitControl)
 
 lda.fit
+#summary(lda.fit)
+```
+### Threshold 0.5
+```{r}
+
+lda.pred <- predict(lda.fit, newdata =blueTarpTest, type = "prob")
+#lda.class<-lda.pred[,"0"]
+lda.class=ifelse(lda.pred[,1]>0.5,1,0)
+
+
+cm.lda <- confusionMatrix(factor(lda.class), factor(blueTarpTest$Blue_Tarp_or_Not))
+cm.lda
+table(lda.class, blueTarpTest$Blue_Tarp_or_Not)
+mean(lda.class==blueTarpTest$Blue_Tarp_or_Not)
+
+#Threshold of 0.5
+sum(lda.pred[,'1']>=0.5)
+sum(lda.pred[,"1"]<0.5) #AUC 88.9%
 
 par(pty="s")
-roc(blueTarpTest$Blue_Tarp_or_Not, lda.fit$fitted.values, plot=TRUE, print.auc=TRUE, col="purple") 
+roc(blueTarpTest$Blue_Tarp_or_Not, lda.class, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE) #need to work on this one
+
+```
+
+```{r}
+
+lda.pred <- predict(lda.fit, newdata =blueTarpTest, type = "prob")
+#lda.class<-lda.pred[,"0"]
+lda.class=ifelse(lda.pred[,1]>0.3,1,0)
+
+
+cm.lda <- confusionMatrix(factor(lda.class), factor(blueTarpTest$Blue_Tarp_or_Not))
+cm.lda
+table(lda.class, blueTarpTest$Blue_Tarp_or_Not)
+mean(lda.class==blueTarpTest$Blue_Tarp_or_Not)
+
+#Threshold of 0.3
+sum(lda.pred[,'1']>=0.3)
+sum(lda.pred[,"1"]<0.3) #AUC 
+
+par(pty="s")
+roc(blueTarpTest$Blue_Tarp_or_Not, lda.class, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE) #need to work on this one
+
+```
+```{r}
+
+lda.pred <- predict(lda.fit, newdata =blueTarpTest, type = "prob")
+#lda.class<-lda.pred[,"0"]
+lda.class=ifelse(lda.pred[,1]>.99,1,0)
+
+
+cm.lda <- confusionMatrix(factor(lda.class), factor(blueTarpTest$Blue_Tarp_or_Not))
+cm.lda
+table(lda.class, blueTarpTest$Blue_Tarp_or_Not)
+mean(lda.class==blueTarpTest$Blue_Tarp_or_Not)
+
+#Threshold of 0.3
+sum(lda.pred[,'1']>=.99)
+sum(lda.pred[,"1"]<.99) #AUC 
+
+par(pty="s")
+roc(blueTarpTest$Blue_Tarp_or_Not, lda.class, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE) #need to work on this one
 
 ```
 
@@ -135,13 +197,35 @@ qda.fit <- caret::train(Blue_Tarp_or_Not~Red+Green+Blue,
 
 qda.fit
 
+```
+
+### Threshold 0.5
+```{r}
+
+qda.pred <- predict(qda.fit, newdata =blueTarpTest, type = "prob")
+qda.class=ifelse(qda.pred[,1]>0.5,1,0)
+
+
+cm.qda <- confusionMatrix(factor(qda.class), factor(blueTarpTest$Blue_Tarp_or_Not))
+cm.qda
+table(qda.class, blueTarpTest$Blue_Tarp_or_Not)
+mean(qda.class==blueTarpTest$Blue_Tarp_or_Not)
+
+#Threshold of 0.5
+sum(qda.pred[,'1']>=0.5)
+sum(qda.pred[,"1"]<0.5) #AUC 88.9%
+
+par(pty="s")
+roc(blueTarpTest$Blue_Tarp_or_Not, qda.class, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE) #need to work on this one
 
 ```
+
 ## Base R KNN
 ```{r}
 
-knn.pred<-knn(data.frame(blueTarpTrain), data.frame(blueTarpTest), blueTarpTrain$Blue_Tarp_or_Not, k=10)
-#summary(knn.pred)
+knn.mod<-knn(data.frame(blueTarpTrain), data.frame(blueTarpTest), blueTarpTrain$Blue_Tarp_or_Not, k=10)
+
+#haven't done prediction yet
 cm.knn <- confusionMatrix(knn.pred, blueTarpTest$Blue_Tarp_or_Not)
 cm.knn
 
@@ -168,6 +252,29 @@ knn.fit <- train(Blue_Tarp_or_Not~Red+Green+Blue,
 
 knn.fit
 
+#need to put in the predictions here then feed that to the ROC curve 
+
+
+```
+
+```{r}
+knn.pred <- predict(knn.mod, newdata =blueTarpTest, type = "prob")
+knn.class=ifelse(knn.pred[,1]>0.5,1,0)
+
+
+cm.knn <- confusionMatrix(factor(knn.class), factor(blueTarpTest$Blue_Tarp_or_Not))
+cm.knn
+table(knn.class, blueTarpTest$Blue_Tarp_or_Not)
+mean(knn.class==blueTarpTest$Blue_Tarp_or_Not)
+
+#Threshold of 0.5
+sum(knn.pred[,'1']>=0.5)
+sum(knn.pred[,"1"]<0.5) #AUC
+
+par(pty="s")
+roc(blueTarpTest$Blue_Tarp_or_Not, qda.class, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE) #need to work on this one
+
 ```
 
 
+Choosing a threshold F-score is one way to help decide this... beware of the defaults 
