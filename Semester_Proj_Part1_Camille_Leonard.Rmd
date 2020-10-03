@@ -1,10 +1,13 @@
 ---
-title: "Semester Project Part 1 Camille Leonard"
+title: "SYS 6018 Semester Project Part 1"
+author: Camille Leonard
 output: html_notebook
 ---
 
+### **Project Introduction**  
 
-```{r}
+
+```{r, echo=FALSE, message=FALSE}
 knitr::opts_chunk$set(error=TRUE,        # Keep compiling upon error
                       collapse=FALSE,    # collapse by default
                       echo=TRUE,         # echo code by default
@@ -16,7 +19,7 @@ knitr::opts_chunk$set(error=TRUE,        # Keep compiling upon error
                       message=FALSE)     # do not show R messages
 ```
 
-```{r}
+```{r, echo=FALSE, message=FALSE, results='hide'}
 library(tidyverse)
 library(MASS)
 library(ggplot2)
@@ -26,6 +29,7 @@ library(caret)
 library(pROC)
 library(class)
 library(stats)
+library(ROCR)
 ```
 
 ```{r}
@@ -38,13 +42,6 @@ attach(df)
 ```
 
 ```{r}
-
-#par(las=2)
-#boxplot(Red~Class)
-#boxplot(Green~Class)
-#boxplot(Blue~Class)
-
-
 featurePlot(x = df[,2:4],
             y = df$Class,
             plot = "box",
@@ -80,7 +77,7 @@ blueTarpTest <- blueTarpTest[,-1]
 
 
 ##Logistic Regression 
-
+GLM Base R 
 ```{r}
 #need to do CV on the GLM model... 
 
@@ -95,12 +92,64 @@ par(pty="s")
 roc(blueTarpTest$Blue_Tarp_or_Not, glm.pred, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE) #need to work on this one
 ```
 
+
+GLM Caret 
+```{r, message=FALSE, warning=FALSE}
+fitControl <- trainControl(method = "repeatedcv",
+                           number = 10,
+                           repeats = 10)
+
+set.seed(4)
+glm.fit <- caret::train(Blue_Tarp_or_Not~Red+Green+Blue,
+                    data = blueTarpTrain,
+                    method="glm",
+                    family="binomial",
+                    trControl= fitControl)
+
+glm.fit
+
+summary(glm.fit)
+```
+
+```{r}
+glm.prob <- predict(glm.fit, newdata=blueTarpTest, type = "prob")
+glm.pred_50 <- ifelse(glm.prob[,1]>0.5,1,0)
+cm.glm <- confusionMatrix(factor(glm.pred_50), factor(blueTarpTest$Blue_Tarp_or_Not)) 
+cm.glm
+```
+
+```{r}
+glm.pred_80 <- ifelse(glm.prob[,1]>0.8,1,0)
+cm.glm <- confusionMatrix(factor(glm.pred_80), factor(blueTarpTest$Blue_Tarp_or_Not)) 
+cm.glm
+```
+
+```{r}
+par(pty="s")
+knn_5_50 <- roc(blueTarpTest$Blue_Tarp_or_Not, glm.pred_50, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="GLM ROC Curves") 
+knn_5_80 <- roc(blueTarpTest$Blue_Tarp_or_Not, glm.pred_80, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="blue", lwd=4, print.auc.y=42,print.auc=TRUE, main="GLM ROC Curves", add=TRUE) 
+legend("bottomright",legend=c("50%", "80%"), col=c("#965fd4","blue"), lwd=4)
+ 
+```
+
+
+Not sure how to make this one work yet
+```{r}
+par(pty="s")
+rates_glm <- prediction(glm.pred, blueTarpTest$Blue_Tarp_or_Not)
+roc_glm<-performance(rates_glm,measure="tpr", x.measure="fpr")
+plot(roc_glm, colorize = TRUE, main="ROC Curve GLM")
+lines(x = c(0,1), y = c(0,1), col="red")
+auc_glm <- performance(rates_glm, measure = "auc")
+auc_glm@y.values
+```
+
+
 One vs the rest for logistic regression of different classes 
 
 ##LDA 
 
 ```{r}
-#fitControl <- trainControl(method = "cv")
 
 fitControl <- trainControl(method = "repeatedcv",
                            number = 10,
@@ -121,63 +170,83 @@ lda.fit
 ```{r}
 
 lda.pred <- predict(lda.fit, newdata =blueTarpTest, type = "prob")
-#lda.class<-lda.pred[,"0"]
-lda.class=ifelse(lda.pred[,1]>0.5,1,0)
+lda.class_50=ifelse(lda.pred[,1]>0.5,1,0)
 
 
-cm.lda <- confusionMatrix(factor(lda.class), factor(blueTarpTest$Blue_Tarp_or_Not))
+cm.lda <- confusionMatrix(factor(lda.class_50), factor(blueTarpTest$Blue_Tarp_or_Not))
 cm.lda
-table(lda.class, blueTarpTest$Blue_Tarp_or_Not)
-mean(lda.class==blueTarpTest$Blue_Tarp_or_Not)
+table(lda.class_50, blueTarpTest$Blue_Tarp_or_Not)
+mean(lda.class_50==blueTarpTest$Blue_Tarp_or_Not)
 
 #Threshold of 0.5
 sum(lda.pred[,'1']>=0.5)
 sum(lda.pred[,"1"]<0.5) #AUC 88.9%
 
-par(pty="s")
-roc(blueTarpTest$Blue_Tarp_or_Not, lda.class, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE) #need to work on this one
+#par(pty="s")
+#roc(blueTarpTest$Blue_Tarp_or_Not, lda.class, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE) #need to work on this one
 
 ```
+
 
 ```{r}
 
 lda.pred <- predict(lda.fit, newdata =blueTarpTest, type = "prob")
-#lda.class<-lda.pred[,"0"]
-lda.class=ifelse(lda.pred[,1]>0.3,1,0)
+lda.class_30=ifelse(lda.pred[,1]>0.3,1,0)
 
 
-cm.lda <- confusionMatrix(factor(lda.class), factor(blueTarpTest$Blue_Tarp_or_Not))
+cm.lda <- confusionMatrix(factor(lda.class_30), factor(blueTarpTest$Blue_Tarp_or_Not))
 cm.lda
-table(lda.class, blueTarpTest$Blue_Tarp_or_Not)
-mean(lda.class==blueTarpTest$Blue_Tarp_or_Not)
+table(lda.class_30, blueTarpTest$Blue_Tarp_or_Not)
+mean(lda.class_30==blueTarpTest$Blue_Tarp_or_Not)
 
 #Threshold of 0.3
 sum(lda.pred[,'1']>=0.3)
 sum(lda.pred[,"1"]<0.3) #AUC 
 
-par(pty="s")
-roc(blueTarpTest$Blue_Tarp_or_Not, lda.class, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE) #need to work on this one
+#par(pty="s")
+#roc(blueTarpTest$Blue_Tarp_or_Not, lda.class, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE) #need to work on this one
 
 ```
+
 ```{r}
 
 lda.pred <- predict(lda.fit, newdata =blueTarpTest, type = "prob")
-#lda.class<-lda.pred[,"0"]
-lda.class=ifelse(lda.pred[,1]>.99,1,0)
+lda.class_99=ifelse(lda.pred[,1]==0.99,1,0)
 
 
-cm.lda <- confusionMatrix(factor(lda.class), factor(blueTarpTest$Blue_Tarp_or_Not))
+cm.lda <- confusionMatrix(factor(lda.class_99), factor(blueTarpTest$Blue_Tarp_or_Not))
 cm.lda
-table(lda.class, blueTarpTest$Blue_Tarp_or_Not)
-mean(lda.class==blueTarpTest$Blue_Tarp_or_Not)
+table(lda.class_99, blueTarpTest$Blue_Tarp_or_Not)
+mean(lda.class_99==blueTarpTest$Blue_Tarp_or_Not)
 
 #Threshold of 0.3
 sum(lda.pred[,'1']>=.99)
 sum(lda.pred[,"1"]<.99) #AUC 
 
-par(pty="s")
-roc(blueTarpTest$Blue_Tarp_or_Not, lda.class, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE) #need to work on this one
+#par(pty="s")
+#roc(blueTarpTest$Blue_Tarp_or_Not, lda.class, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE) #need to work on this one
 
+```
+
+
+```{r}
+par(pty="s")
+lda_50 <- roc(blueTarpTest$Blue_Tarp_or_Not, lda.class_50, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="K=5 ROC Curves") 
+lda_30 <- roc(blueTarpTest$Blue_Tarp_or_Not, lda.class_30, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="blue", lwd=4, print.auc.y=42,print.auc=TRUE, main="K=5 ROC Curves", add=TRUE) 
+lda_99 <- roc(blueTarpTest$Blue_Tarp_or_Not, lda.class_99, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="green", lwd=4, print.auc.y=35,print.auc=TRUE, main="K=5 ROC Curves", add=TRUE)
+legend("bottomright",legend=c("50%", "30%", "99%"), col=c("#965fd4","blue", "green"), lwd=4)
+```
+
+
+```{r}
+
+#par(pty="s")
+#rates_lda <- prediction(lda.pred, blueTarpTest$Blue_Tarp_or_Not)
+#roc_glm<-performance(rates_lda,measure="tpr", x.measure="fpr")
+#plot(roc_lda, colorize = TRUE, main="ROC Curve GLM")
+#lines(x = c(0,1), y = c(0,1), col="red")
+#auc_lda <- performance(rates_lda, measure = "auc")
+#auc_lda@y.values'''
 ```
 
 ##QDA 
@@ -226,11 +295,11 @@ roc(blueTarpTest$Blue_Tarp_or_Not, qda.class, plot=TRUE, legacy.axes=TRUE, perce
 knn.mod<-knn(data.frame(blueTarpTrain), data.frame(blueTarpTest), blueTarpTrain$Blue_Tarp_or_Not, k=10)
 
 #haven't done prediction yet
-cm.knn <- confusionMatrix(knn.pred, blueTarpTest$Blue_Tarp_or_Not)
+cm.knn <- confusionMatrix(knn.mod, blueTarpTest$Blue_Tarp_or_Not)
 cm.knn
 
-table(knn.pred, blueTarpTest$Blue_Tarp_or_Not)
-mean(knn.pred==blueTarpTest$Blue_Tarp_or_Not)
+table(knn.mod, blueTarpTest$Blue_Tarp_or_Not)
+mean(knn.mod==blueTarpTest$Blue_Tarp_or_Not)
 ```
 
 
@@ -258,7 +327,7 @@ knn.fit
 ```
 
 ```{r}
-knn.pred <- predict(knn.mod, newdata =blueTarpTest, type = "prob")
+knn.pred <- predict(knn.fit, newdata =blueTarpTest, type = "prob")
 knn.class=ifelse(knn.pred[,1]>0.5,1,0)
 
 
@@ -269,12 +338,57 @@ mean(knn.class==blueTarpTest$Blue_Tarp_or_Not)
 
 #Threshold of 0.5
 sum(knn.pred[,'1']>=0.5)
-sum(knn.pred[,"1"]<0.5) #AUC
+sum(knn.pred[,"1"]<0.5) #AUC 98.1%
 
+
+#Threshold of 0.8
+knn.class_8=ifelse(knn.pred[,1]>0.8,1,0)
+sum(knn.pred[,'1']>=0.8)
+sum(knn.pred[,"1"]<0.8) #AUC %
+```
+
+```{r}
 par(pty="s")
-roc(blueTarpTest$Blue_Tarp_or_Not, qda.class, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE) #need to work on this one
-
+knn_5_50 <- roc(blueTarpTest$Blue_Tarp_or_Not, knn.class, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="K=5 ROC Curves") 
+knn_5_80 <- roc(blueTarpTest$Blue_Tarp_or_Not, knn.class_8, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="blue", lwd=4, print.auc.y=42,print.auc=TRUE, main="K=5 ROC Curves", add=TRUE) 
+legend("bottomright",legend=c("50%", "80%"), col=c("#965fd4","blue"), lwd=4)
 ```
 
 
 Choosing a threshold F-score is one way to help decide this... beware of the defaults 
+\
+## Results Table 
+
+|                   Method | KNN (k = 5)  |    LDA    |    QDA    | Log. Regression |
+|-------------------------:|:------------:|:---------:|:---------:|:---------------:|
+|                 Accuracy |              |           |           |                 |
+|                      AUC |              |           |           |                 |
+|                      ROC |              |           |           |                 |
+|                Threshold |              |           |           |                 |
+| Sensitivity=Recall=Power |              |           |           |                 |
+|        Specificity=1-FPR |              |           |           |                 |
+|                      FDR |              |           |           |                 |
+|            Precision=PPV |              |           |           |                 |
+
+\
+#### Threshold Justifications
+
+\
+##### KNN 
+
+\
+#### LDA 
+
+\
+#### QDA 
+
+\
+#### Logistic Regression 
+
+
+\
+## Conclusions 
+
+
+
+
