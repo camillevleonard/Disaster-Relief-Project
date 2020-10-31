@@ -25,7 +25,7 @@ Displaced persons were known to be making make-shift shelters out of blue tarps.
 As the final project for SYS 6018 - Data Mining, we were assigned to build models from the different techniques we learned in the course to, as accurately as possible, and in as timely a manner as possible, locate as many of the displaced persons identified in the imagery data so that they could be provided food and water before their situations became unsurvivable.    
 
 # Risk Analysis / Cost Benefit / Budget for Project 
-
+The US Government spent [$1.5B on Haiti disaster relief](https://www.rand.org/pubs/research_reports/RR304.html) by the end of 2010.  
 *method of delivery
 *cost of resources
 *time from disaster to unsurvivable conditions 
