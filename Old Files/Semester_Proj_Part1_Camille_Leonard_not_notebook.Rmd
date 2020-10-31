@@ -1,0 +1,401 @@
+---
+title: "SYS 6018 Semester Project Part 1"
+author: Camille Leonard
+output: html_notebook
+---
+
+### **Project Introduction**  
+
+The objective of this project is to create predictive models to accurately and quickly identify the locations of people in need of aid from data collected by Rochester Institute of Technology in the wake of the 2010 earthquake in Haiti. 
+
+In part one of this project, logistic regression, LDA, QDA, and KNN methods will be used to create models. 
+
+```{r, echo=FALSE, message=FALSE}
+knitr::opts_chunk$set(error=TRUE,        # Keep compiling upon error
+                      collapse=FALSE,    # collapse by default
+                      echo=TRUE,         # echo code by default
+                      comment = "#>",    # change comment character
+                      fig.width = 7,     # set figure width
+                      fig.align = "center",# set figure position
+                      out.width = "49%", # set width of displayed images
+                      warning=FALSE,     # do not show R warnings
+                      message=FALSE)     # do not show R messages
+```
+
+```{r 1, echo=FALSE, message=FALSE, results='hide'}
+library(tidyverse)
+library(MASS)
+library(ggplot2)
+library(GGally)
+library(caret)
+library(pROC)
+library(class)
+library(stats)
+library(ROCR)
+```
+
+```{r 2}
+df <- tibble(read.csv("HaitiPixels.csv")) #read in df
+anyNA(df) #check for NA values 
+summary(df) #quick look at data
+ggpairs(df[,2:4], lower.panel = NULL) #view scatter and correlations
+df$Class <- factor(df$Class) #make Class a factor variable. 
+attach(df) #attach df variables 
+```
+
+```{r 3}
+#take a look at the distribution of classes and RBG values 
+featurePlot(x = df[,2:4],
+            y = df$Class,
+            plot = "box",
+            layout = c(3,1), 
+            scales = list(y = list(relation = "free"),
+                          x = list(rot = 90)))
+```
+
+```{r 4}
+df <- cbind(mutate(df, "Blue_Tarp_or_Not"=ifelse(Class != "Blue Tarp", 0, 1))) #add binary column indicating whether the Class variable is "Blue Tarp" or not
+attach(df)
+Blue_Tarp_or_Not <- as.factor(Blue_Tarp_or_Not) #ensure new column is a factor 
+df
+tail(df)
+
+```
+
+
+```{r 5}
+#create training and final hold out set (called test)
+set.seed(4)
+trainIndex <- createDataPartition(Class, p=0.8,
+                                  list=FALSE,
+                                  times=1)
+
+blueTarpTrain <- df[trainIndex,]
+blueTarpTrain$Blue_Tarp_or_Not <- as.factor(blueTarpTrain$Blue_Tarp_or_Not)
+blueTarpTrain <- blueTarpTrain[,-1] #remove Class column
+blueTarpTest <- df[-trainIndex,]
+blueTarpTest$Blue_Tarp_or_Not <- as.factor(blueTarpTest$Blue_Tarp_or_Not)
+blueTarpTest <- blueTarpTest[,-1] #remove Class column
+
+```
+
+
+## Logistic Regression 
+
+```{r 6, message=FALSE, warning=FALSE}
+fitControl <- trainControl(method = "repeatedcv",
+                           number = 10,
+                           repeats = 10) #set fitControl parameters such that 10 folds and 10 repeats are done
+
+set.seed(4)
+glm.fit <- caret::train(Blue_Tarp_or_Not~Red+Green+Blue,
+                    data = blueTarpTrain,
+                    method="glm",
+                    family="binomial",
+                    trControl= fitControl)
+
+glm.fit
+
+summary(glm.fit)
+```
+
+
+
+```{r}
+glm.prob <- predict(glm.fit, newdata=blueTarpTrain, type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
+roc.info_glm <- roc(blueTarpTrain$Blue_Tarp_or_Not, glm.prob[,2], legacy.axes=TRUE)
+roc.glm.df <- data.frame(tpp=roc.info_glm$sensitivities*100, fpp=(1-roc.info_glm$specificities)*100, thresholds=roc.info_glm$thresholds)
+tail(roc.glm.df, 2200)
+```
+
+```{r}
+par(pty="s")
+glm_roc <- roc(blueTarpTrain$Blue_Tarp_or_Not, glm.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="GLM ROC Curve") 
+```
+```{r}
+glm.pred_50 <- ifelse(glm.prob[,2]>0.5,1,0)
+cm.glm_50 <- confusionMatrix(factor(glm.pred_50), factor(blueTarpTrain$Blue_Tarp_or_Not), positive = '1') 
+"Threshold: 0.5"
+cm.glm_50 
+
+glm.pred_01 <- ifelse(glm.prob[,2]>0.01,1,0)
+cm.glm_01 <- confusionMatrix(factor(glm.pred_01), factor(blueTarpTrain$Blue_Tarp_or_Not), positive = '1') 
+"Threshold: 0.01"
+cm.glm_01
+```
+
+
+```{r 9}
+par(mfrow=c(2,2))
+par(pty="s")
+#threshold 0.5
+rates_glm_50 <- prediction(glm.pred_50_c, blueTarpTrain$Blue_Tarp_or_Not)
+roc_glm_50<-performance(rates_glm_50,measure="tpr", x.measure="fpr")
+plot(roc_glm_50, colorize = TRUE, main="ROC Curve GLMc - 0.5 ")
+lines(x = c(0,1), y = c(0,1), col="red")
+
+ROC_sens_glm_50 <- performance(prediction(glm.pred_50_c, blueTarpTrain$Blue_Tarp_or_Not),"sens","spec") #pull sen and spec values 
+auc_glm_50 <- performance(rates_glm_50, measure = "auc") #pull auc values
+text(1,0.25,labels=paste("AUC = ",round(auc_glm_50@y.values[[1]],digits=2),sep=""),adj=1) #add label to figure
+text(1,0.15,labels=paste("Sens = ",round(mean(as.data.frame(ROC_sens_glm_50@y.values)[,1]),digits=2),sep=""),adj=1)
+text(1,0.05,labels=paste("Spec = ",round(mean(as.data.frame(ROC_sens_glm_50@x.values)[,1]),digits=2),sep=""),adj=1)
+
+# Threshold 0.8
+rates_glm_80 <- prediction(glm.pred_80_c, blueTarpTrain$Blue_Tarp_or_Not)
+roc_glm_80<-performance(rates_glm_80,measure="tpr", x.measure="fpr")
+plot(roc_glm_80, colorize = TRUE, main="ROC Curve GLM - 0.8")
+lines(x = c(0,1), y = c(0,1), col="red")
+
+ROC_sens_glm_80 <- performance(prediction(glm.pred_80_c, blueTarpTrain$Blue_Tarp_or_Not),"sens","spec") #pull sen and spec values 
+auc_glm_80 <- performance(rates_glm_80, measure = "auc")
+text(1,0.25,labels=paste("AUC = ",round(auc_glm_80@y.values[[1]],digits=2),sep=""),adj=1)
+text(1,0.15,labels=paste("Sens = ",round(mean(as.data.frame(ROC_sens_glm_80@y.values)[,1]),digits=2),sep=""),adj=1)
+text(1,0.05,labels=paste("Spec = ",round(mean(as.data.frame(ROC_sens_glm_80@x.values)[,1]),digits=2),sep=""),adj=1)
+
+# Threshold 0.45
+
+rates_glm_45 <- prediction(glm.pred_45_c, blueTarpTrain$Blue_Tarp_or_Not)
+roc_glm_45<-performance(rates_glm_45,measure="tpr", x.measure="fpr")
+plot(roc_glm_45, colorize = TRUE, main="ROC Curve GLM - 0.45")
+lines(x = c(0,1), y = c(0,1), col="red")
+
+ROC_sens_glm_45 <- performance(prediction(glm.pred_45_c, blueTarpTrain$Blue_Tarp_or_Not),"sens","spec") #pull sen and spec values 
+auc_glm_45 <- performance(rates_glm_45, measure = "auc")
+text(1,0.25,labels=paste("AUC = ",round(auc_glm_45@y.values[[1]],digits=2),sep=""),adj=1)
+text(1,0.15,labels=paste("Sens = ",round(mean(as.data.frame(ROC_sens_glm_45@y.values)[,1]),digits=2),sep=""),adj=1)
+text(1,0.05,labels=paste("Spec = ",round(mean(as.data.frame(ROC_sens_glm_45@x.values)[,1]),digits=2),sep=""),adj=1)
+
+# Threshold 0.95
+
+rates_glm_95 <- prediction(glm.pred_95_c, blueTarpTrain$Blue_Tarp_or_Not)
+roc_glm_95<-performance(rates_glm_95,measure="tpr", x.measure="fpr")
+plot(roc_glm_95, colorize = TRUE, main="ROC Curve GLM - 0.95")
+lines(x = c(0,1), y = c(0,1), col="red")
+
+ROC_sens_glm_95 <- performance(prediction(glm.pred_95_c, blueTarpTrain$Blue_Tarp_or_Not),"sens","spec") #pull sen and spec values 
+auc_glm_95 <- performance(rates_glm_95, measure = "auc")
+text(1,0.25,labels=paste("AUC = ",round(auc_glm_95@y.values[[1]],digits=2),sep=""),adj=1)
+text(1,0.15,labels=paste("Sens = ",round(mean(as.data.frame(ROC_sens_glm_95@y.values)[,1]),digits=2),sep=""),adj=1)
+text(1,0.05,labels=paste("Spec = ",round(mean(as.data.frame(ROC_sens_glm_95@x.values)[,1]),digits=2),sep=""),adj=1)
+
+```
+
+
+One vs the rest for logistic regression of different classes 
+
+##LDA 
+
+```{r 10}
+
+fitControl <- trainControl(method = "repeatedcv",
+                           number = 10,
+                           repeats = 10)
+
+set.seed(4)
+lda.fit <- caret::train(Blue_Tarp_or_Not~Red+Green+Blue,
+                    data = blueTarpTrain,
+                    preProcess=c("center","scale"),
+                    method="lda",
+                    verbose= FALSE,
+                    trControl= fitControl)
+
+lda.fit
+#summary(lda.fit)
+```
+### Threshold 0.5
+```{r 11}
+"Threshold: 0.5"
+lda.pred <- predict(lda.fit, newdata =blueTarpTrain, type = "prob")
+lda.class_50=ifelse(lda.pred[,2]>0.5,1,0)
+cm.lda_50 <- confusionMatrix(factor(lda.class_50), factor(blueTarpTrain$Blue_Tarp_or_Not), positive="1")
+cm.lda_50
+
+"Threshold: 0.3"
+lda.class_30=ifelse(lda.pred[,2]>0.3,1,0)
+cm.lda_30 <- confusionMatrix(factor(lda.class_30), factor(blueTarpTrain$Blue_Tarp_or_Not), positive="1")
+cm.lda_30
+
+"Threshold: 0.99"
+lda.class_99=ifelse(lda.pred[,2]>0.99,1,0)
+cm.lda_99 <- confusionMatrix(factor(lda.class_99), factor(blueTarpTrain$Blue_Tarp_or_Not), positive="1")
+cm.lda_99
+```
+
+```{r}
+par(pty="s")
+lda_50 <- roc(blueTarpTrain$Blue_Tarp_or_Not, lda.class_50, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="LDA ROC Curves") 
+lda_30 <- roc(blueTarpTrain$Blue_Tarp_or_Not, lda.class_30, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="blue", lwd=4, print.auc.y=42,print.auc=TRUE, main="LDA ROC Curves", add=TRUE) 
+lda_99 <- roc(blueTarpTrain$Blue_Tarp_or_Not, lda.class_99, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="green", lwd=4, print.auc.y=35,print.auc=TRUE, main="LDA ROC Curves", add=TRUE)
+legend("bottomright",legend=c("50%", "30%", "99%"), col=c("#965fd4","blue", "green"), lwd=4)
+```
+
+## QDA 
+
+```{r}
+fitControl <- trainControl(method = "repeatedcv",
+                           number = 10,
+                           repeats = 10)
+
+set.seed(4)
+qda.fit <- caret::train(Blue_Tarp_or_Not~Red+Green+Blue,
+                    data = blueTarpTrain,
+                    preProcess=c("center","scale"),
+                    method="qda",
+                    verbose= FALSE,
+                    trControl= fitControl)
+
+qda.fit
+
+```
+
+### Threshold 0.5
+```{r}
+
+qda.pred <- predict(qda.fit, newdata =blueTarpTrain, type = "prob")
+
+"Threshold: 0.5"
+qda.class_50=ifelse(qda.pred[,2]>0.5,1,0)
+cm.qda_50 <- confusionMatrix(factor(qda.class_50), factor(blueTarpTrain$Blue_Tarp_or_Not), positive="1")
+cm.qda_50
+
+"Threshold: 0.8"
+qda.class_80=ifelse(qda.pred[,2]>0.8,1,0)
+cm.qda_80 <- confusionMatrix(factor(qda.class_80), factor(blueTarpTrain$Blue_Tarp_or_Not), positive="1")
+cm.qda_80
+```
+
+
+```{r}
+par(pty="s")
+roc(blueTarpTrain$Blue_Tarp_or_Not, qda.class_50, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", main ='QDA ROC Curves', col="#965fd4", lwd=4, print.auc=TRUE,print.auc.y=42) 
+roc(blueTarpTrain$Blue_Tarp_or_Not, qda.class_80, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", main ='QDA ROC Curves', col="blue", lwd=4, print.auc=TRUE, add=TRUE, print.auc.y=30) 
+legend("bottomright",legend=c("50%", "80%"), col=c("#965fd4","blue"), lwd=4)
+
+```
+
+
+## KNN
+```{r}
+fitControl <- trainControl(method = "repeatedcv",
+                           number = 10, #number of folds
+                           repeats = 10) # number of times each fold is run; can the number of repeats be reduced? do both of these need to be 10?
+
+set.seed(4)
+knn.fit <- train(Blue_Tarp_or_Not~Red+Green+Blue,
+                    data = blueTarpTrain,
+                    preProcess=c("center","scale"),
+                    method="knn",
+                    trControl= fitControl,
+                    tuneLength=10
+                    )
+
+knn.fit
+
+
+```
+
+```{r}
+knn.pred <- predict(knn.fit, newdata =blueTarpTrain, type = "prob")
+```
+
+```{r}
+"Threshold 0.5"
+knn.class_50=ifelse(knn.pred[,2]>0.5,1,0)
+cm.knn_50 <- confusionMatrix(factor(knn.class_50), factor(blueTarpTrain$Blue_Tarp_or_Not), positive="1")
+cm.knn_50
+
+"Threshold 0.8"
+knn.class_80=ifelse(knn.pred[,2]>0.8,1,0)
+cm.knn_80 <- confusionMatrix(factor(knn.class_80), factor(blueTarpTrain$Blue_Tarp_or_Not), positive="1")
+cm.knn_80
+```
+
+```{r}
+par(pty="s")
+knn_5_50 <- roc(blueTarpTrain$Blue_Tarp_or_Not, knn.class_50, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="K=5 ROC Curves") 
+knn_5_80 <- roc(blueTarpTrain$Blue_Tarp_or_Not, knn.class_80, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="blue", lwd=4, print.auc.y=42,print.auc=TRUE, main="K=5 ROC Curves", add=TRUE) 
+legend("bottomright",legend=c("50%", "80%"), col=c("#965fd4","blue"), lwd=4)
+```
+
+## Final Hold Out Performance 
+
+GLM
+```{r}
+glm.prob_FHO <- predict(glm.fit_c, newdata=blueTarpTest, type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
+glm.pred_50_FHO <- ifelse(glm.prob_FHO[,2]>0.5,1,0)
+cm.glm_50_FHO <- confusionMatrix(factor(glm.pred_50_FHO), factor(blueTarpTest$Blue_Tarp_or_Not), positive = '1') 
+cm.glm_50_FHO
+```
+
+LDA
+```{r}
+lda.pred_FHO <- predict(lda.fit, newdata =blueTarpTest, type = "prob")
+lda.class_FHO=ifelse(lda.pred_FHO[,2]>0.5,1,0)
+cm.lda_FHO <- confusionMatrix(factor(lda.class_FHO), factor(blueTarpTest$Blue_Tarp_or_Not), positive="1")
+cm.lda_FHO
+```
+
+QDA 
+
+```{r}
+qda.pred_FHO <- predict(qda.fit, newdata =blueTarpTest, type = "prob")
+qda.class_FHO=ifelse(qda.pred_FHO[,2]>0.5,1,0)
+cm.qda_FHO <- confusionMatrix(factor(qda.class_FHO), factor(blueTarpTest$Blue_Tarp_or_Not), positive="1")
+cm.qda_FHO
+```
+
+KNN
+```{r}
+knn.pred_FHO <- predict(knn.fit, newdata =blueTarpTest, type = "prob")
+knn.class_FHO=ifelse(knn.pred_FHO[,2]>0.5,1,0)
+cm.knn_FHO <- confusionMatrix(factor(knn.class_FHO), factor(blueTarpTest$Blue_Tarp_or_Not), positive="1")
+cm.knn_FHO
+```
+
+
+Choosing a threshold F-score is one way to help decide this... beware of the defaults 
+\
+## Results Table 
+
+|                   Method | KNN (k = 5)  |    LDA    |    QDA    | Log. Regression |
+|-------------------------:|:------------:|:---------:|:---------:|:---------------:|
+|                 Accuracy |              |           |           |                 |
+|                      AUC |              |           |           |                 |
+|                      ROC |              |           |           |                 |
+|                Threshold |              |           |           |                 |
+| Sensitivity=Recall=Power |              |           |           |                 |
+|        Specificity=1-FPR |              |           |           |                 |
+|                      FDR |              |           |           |                 |
+|            Precision=PPV |              |           |           |                 |
+
+
+\
+#### Threshold Justifications
+
+\
+##### KNN 
+
+\
+#### LDA 
+
+\
+#### QDA 
+
+\
+#### Logistic Regression 
+
+
+\
+## Conclusions 
+
+
+
+
+#### References 
+
+* Caret Documentation: https://topepo.github.io/caret/index.html 
+* ROCR Documentation: 
+* My group's STAT 6021 Final Project
+* article about colorized ROC curves 
+* https://davidrroberts.wordpress.com/2015/09/22/quick-auc-function-in-r-with-rocr-package/ 
+* https://www.youtube.com/watch?v=qcvAqAH60Yw&ab_channel=StatQuestwithJoshStarmer

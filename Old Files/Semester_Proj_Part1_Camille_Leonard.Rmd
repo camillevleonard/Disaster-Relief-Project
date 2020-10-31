@@ -100,34 +100,34 @@ fitControl <- trainControl(method = "repeatedcv",
                            repeats = 10)
 
 set.seed(4)
-glm.fit <- caret::train(Blue_Tarp_or_Not~Red+Green+Blue,
+glm.fit_c <- caret::train(Blue_Tarp_or_Not~Red+Green+Blue,
                     data = blueTarpTrain,
                     method="glm",
                     family="binomial",
                     trControl= fitControl)
 
-glm.fit
+glm.fit_c
 
-summary(glm.fit)
+summary(glm.fit_c)
 ```
 
 ```{r}
-glm.prob <- predict(glm.fit, newdata=blueTarpTest, type = "prob")
-glm.pred_50 <- ifelse(glm.prob[,1]>0.5,1,0)
-cm.glm <- confusionMatrix(factor(glm.pred_50), factor(blueTarpTest$Blue_Tarp_or_Not)) 
-cm.glm
+glm.prob_c <- predict(glm.fit_c, newdata=blueTarpTest, positive = '1', type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
+glm.pred_50_c <- ifelse(glm.prob_c[,2]>0.5,1,0)
+cm.glm_50_c <- confusionMatrix(factor(glm.pred_50_c), factor(blueTarpTest$Blue_Tarp_or_Not)) 
+cm.glm_50_c
 ```
 
 ```{r}
-glm.pred_80 <- ifelse(glm.prob[,1]>0.8,1,0)
-cm.glm <- confusionMatrix(factor(glm.pred_80), factor(blueTarpTest$Blue_Tarp_or_Not)) 
-cm.glm
+glm.pred_80_c <- ifelse(glm.prob_c[,2]>0.8,1,0)
+cm.glm_80_c <- confusionMatrix(factor(glm.pred_80_c), factor(blueTarpTest$Blue_Tarp_or_Not)) 
+cm.glm_80_c
 ```
 
 ```{r}
 par(pty="s")
-knn_5_50 <- roc(blueTarpTest$Blue_Tarp_or_Not, glm.pred_50, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="GLM ROC Curves") 
-knn_5_80 <- roc(blueTarpTest$Blue_Tarp_or_Not, glm.pred_80, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="blue", lwd=4, print.auc.y=42,print.auc=TRUE, main="GLM ROC Curves", add=TRUE) 
+glm_50_c <- roc(blueTarpTest$Blue_Tarp_or_Not, glm.pred_50_c, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="GLM ROC Curves") 
+glm_80_c <- roc(blueTarpTest$Blue_Tarp_or_Not, glm.pred_80_c, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="blue", lwd=4, print.auc.y=42,print.auc=TRUE, main="GLM ROC Curves", add=TRUE) 
 legend("bottomright",legend=c("50%", "80%"), col=c("#965fd4","blue"), lwd=4)
  
 ```
@@ -135,13 +135,21 @@ legend("bottomright",legend=c("50%", "80%"), col=c("#965fd4","blue"), lwd=4)
 
 Not sure how to make this one work yet
 ```{r}
+par(mfrow=c(1,2))
 par(pty="s")
-rates_glm <- prediction(glm.pred, blueTarpTest$Blue_Tarp_or_Not)
-roc_glm<-performance(rates_glm,measure="tpr", x.measure="fpr")
-plot(roc_glm, colorize = TRUE, main="ROC Curve GLM")
+rates_glm_50 <- prediction(glm.pred_50_c, blueTarpTest$Blue_Tarp_or_Not)
+roc_glm_50<-performance(rates_glm_50,measure="tpr", x.measure="fpr")
+plot(roc_glm_50, colorize = TRUE, main="ROC Curve GLMc - 0.5 ")
 lines(x = c(0,1), y = c(0,1), col="red")
-auc_glm <- performance(rates_glm, measure = "auc")
-auc_glm@y.values
+auc_glm_50 <- performance(rates_glm_50, measure = "auc")
+auc_glm_50@y.values
+
+rates_glm_80 <- prediction(glm.pred_80_c, blueTarpTest$Blue_Tarp_or_Not)
+roc_glm_80<-performance(rates_glm_80,measure="tpr", x.measure="fpr")
+plot(roc_glm_80, colorize = TRUE, main="ROC Curve GLM - 0.8")
+lines(x = c(0,1), y = c(0,1), col="red")
+auc_glm_80 <- performance(rates_glm_80, measure = "auc")
+auc_glm_80@y.values
 ```
 
 
@@ -170,7 +178,7 @@ lda.fit
 ```{r}
 
 lda.pred <- predict(lda.fit, newdata =blueTarpTest, type = "prob")
-lda.class_50=ifelse(lda.pred[,1]>0.5,1,0)
+lda.class_50=ifelse(lda.pred[,2]>0.5,1,0)
 
 
 cm.lda <- confusionMatrix(factor(lda.class_50), factor(blueTarpTest$Blue_Tarp_or_Not))
@@ -191,7 +199,7 @@ sum(lda.pred[,"1"]<0.5) #AUC 88.9%
 ```{r}
 
 lda.pred <- predict(lda.fit, newdata =blueTarpTest, type = "prob")
-lda.class_30=ifelse(lda.pred[,1]>0.3,1,0)
+lda.class_30=ifelse(lda.pred[,2]>0.3,1,0)
 
 
 cm.lda <- confusionMatrix(factor(lda.class_30), factor(blueTarpTest$Blue_Tarp_or_Not))
@@ -211,7 +219,7 @@ sum(lda.pred[,"1"]<0.3) #AUC
 ```{r}
 
 lda.pred <- predict(lda.fit, newdata =blueTarpTest, type = "prob")
-lda.class_99=ifelse(lda.pred[,1]==0.99,1,0)
+lda.class_99=ifelse(lda.pred[,2]>0.99,1,0)
 
 
 cm.lda <- confusionMatrix(factor(lda.class_99), factor(blueTarpTest$Blue_Tarp_or_Not))
@@ -272,7 +280,7 @@ qda.fit
 ```{r}
 
 qda.pred <- predict(qda.fit, newdata =blueTarpTest, type = "prob")
-qda.class=ifelse(qda.pred[,1]>0.5,1,0)
+qda.class=ifelse(qda.pred[,2]>0.5,1,0)
 
 
 cm.qda <- confusionMatrix(factor(qda.class), factor(blueTarpTest$Blue_Tarp_or_Not))
@@ -328,7 +336,7 @@ knn.fit
 
 ```{r}
 knn.pred <- predict(knn.fit, newdata =blueTarpTest, type = "prob")
-knn.class=ifelse(knn.pred[,1]>0.5,1,0)
+knn.class=ifelse(knn.pred[,2]>0.5,1,0)
 
 
 cm.knn <- confusionMatrix(factor(knn.class), factor(blueTarpTest$Blue_Tarp_or_Not))
@@ -370,6 +378,7 @@ Choosing a threshold F-score is one way to help decide this... beware of the def
 |                      FDR |              |           |           |                 |
 |            Precision=PPV |              |           |           |                 |
 
+
 \
 #### Threshold Justifications
 
@@ -392,3 +401,5 @@ Choosing a threshold F-score is one way to help decide this... beware of the def
 
 
 
+#### References 
+need to add the things I read... anything at all... 

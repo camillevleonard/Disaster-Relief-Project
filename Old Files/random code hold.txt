@@ -1,0 +1,301 @@
+```{r}
+par(mfrow=c(1,2))
+par(pty="s")
+#threshold 0.5
+rates_lda_50 <- prediction(lda.class_50, blueTarpTrain$Blue_Tarp_or_Not)
+roc_lda_50<-performance(rates_lda_50,measure="tpr", x.measure="fpr")
+plot(roc_lda_50, colorize = TRUE, main="ROC Curve LDA - 0.5 ")
+lines(x = c(0,1), y = c(0,1), col="red")
+
+ROC_sens_lda_50 <- performance(prediction(lda.class_50, blueTarpTrain$Blue_Tarp_or_Not),"sens","spec") #pull sen and spec values 
+auc_lda_50 <- performance(rates_lda_50, measure = "auc") #pull auc values
+text(1,0.25,labels=paste("AUC = ",round(auc_lda_50@y.values[[1]],digits=2),sep=""),adj=1) #add label to figure
+text(1,0.15,labels=paste("Sens = ",round(mean(as.data.frame(ROC_sens_lda_50@y.values)[,1]),digits=2),sep=""),adj=1)
+text(1,0.05,labels=paste("Spec = ",round(mean(as.data.frame(ROC_sens_lda_50@x.values)[,1]),digits=2),sep=""),adj=1)
+```
+
+
+```{r 7}
+glm.prob_c <- predict(glm.fit_c, newdata=blueTarpTrain, type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
+glm.pred_50_c <- ifelse(glm.prob_c[,2]>0.5,1,0)
+cm.glm_50_c <- confusionMatrix(factor(glm.pred_50_c), factor(blueTarpTrain$Blue_Tarp_or_Not), positive = '1') 
+"Threshold: 0.5"
+cm.glm_50_c 
+
+glm.pred_80_c <- ifelse(glm.prob_c[,2]>0.8,1,0)
+cm.glm_80_c <- confusionMatrix(factor(glm.pred_80_c), factor(blueTarpTrain$Blue_Tarp_or_Not), positive="1") 
+"Threshold: 0.8"
+cm.glm_80_c
+
+glm.pred_45_c <- ifelse(glm.prob_c[,2]>0.45,1,0)
+cm.glm_45_c <- confusionMatrix(factor(glm.pred_45_c), factor(blueTarpTrain$Blue_Tarp_or_Not), positive="1") 
+"Threshold: 0.45"
+cm.glm_45_c
+
+glm.pred_95_c <- ifelse(glm.prob_c[,2]>0.95,1,0)
+cm.glm_95_c <- confusionMatrix(factor(glm.pred_95_c), factor(blueTarpTrain$Blue_Tarp_or_Not), positive="1") 
+"Threshold: 0.95"
+cm.glm_95_c
+```
+
+```{r 8}
+par(pty="s")
+glm_50_c <- roc(blueTarpTrain$Blue_Tarp_or_Not, glm.pred_50_c, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="GLM ROC Curves") 
+glm_80_c <- roc(blueTarpTrain$Blue_Tarp_or_Not, glm.pred_80_c, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="blue", lwd=4, print.auc.y=42,print.auc=TRUE, main="GLM ROC Curves", add=TRUE) 
+legend("bottomright",legend=c("50%", "80%"), col=c("#965fd4","blue"), lwd=4)
+ 
+```
+
+```{r 9}
+par(mfrow=c(2,2))
+par(pty="s")
+#threshold 0.5
+rates_glm_50 <- prediction(glm.pred_50_c, blueTarpTrain$Blue_Tarp_or_Not)
+roc_glm_50<-performance(rates_glm_50,measure="tpr", x.measure="fpr")
+plot(roc_glm_50, colorize = TRUE, main="ROC Curve GLMc - 0.5 ")
+lines(x = c(0,1), y = c(0,1), col="red")
+
+ROC_sens_glm_50 <- performance(prediction(glm.pred_50_c, blueTarpTrain$Blue_Tarp_or_Not),"sens","spec") #pull sen and spec values 
+auc_glm_50 <- performance(rates_glm_50, measure = "auc") #pull auc values
+text(1,0.25,labels=paste("AUC = ",round(auc_glm_50@y.values[[1]],digits=2),sep=""),adj=1) #add label to figure
+text(1,0.15,labels=paste("Sens = ",round(mean(as.data.frame(ROC_sens_glm_50@y.values)[,1]),digits=2),sep=""),adj=1)
+text(1,0.05,labels=paste("Spec = ",round(mean(as.data.frame(ROC_sens_glm_50@x.values)[,1]),digits=2),sep=""),adj=1)
+
+# Threshold 0.8
+rates_glm_80 <- prediction(glm.pred_80_c, blueTarpTrain$Blue_Tarp_or_Not)
+roc_glm_80<-performance(rates_glm_80,measure="tpr", x.measure="fpr")
+plot(roc_glm_80, colorize = TRUE, main="ROC Curve GLM - 0.8")
+lines(x = c(0,1), y = c(0,1), col="red")
+
+ROC_sens_glm_80 <- performance(prediction(glm.pred_80_c, blueTarpTrain$Blue_Tarp_or_Not),"sens","spec") #pull sen and spec values 
+auc_glm_80 <- performance(rates_glm_80, measure = "auc")
+text(1,0.25,labels=paste("AUC = ",round(auc_glm_80@y.values[[1]],digits=2),sep=""),adj=1)
+text(1,0.15,labels=paste("Sens = ",round(mean(as.data.frame(ROC_sens_glm_80@y.values)[,1]),digits=2),sep=""),adj=1)
+text(1,0.05,labels=paste("Spec = ",round(mean(as.data.frame(ROC_sens_glm_80@x.values)[,1]),digits=2),sep=""),adj=1)
+
+# Threshold 0.45
+
+rates_glm_45 <- prediction(glm.pred_45_c, blueTarpTrain$Blue_Tarp_or_Not)
+roc_glm_45<-performance(rates_glm_45,measure="tpr", x.measure="fpr")
+plot(roc_glm_45, colorize = TRUE, main="ROC Curve GLM - 0.45")
+lines(x = c(0,1), y = c(0,1), col="red")
+
+ROC_sens_glm_45 <- performance(prediction(glm.pred_45_c, blueTarpTrain$Blue_Tarp_or_Not),"sens","spec") #pull sen and spec values 
+auc_glm_45 <- performance(rates_glm_45, measure = "auc")
+text(1,0.25,labels=paste("AUC = ",round(auc_glm_45@y.values[[1]],digits=2),sep=""),adj=1)
+text(1,0.15,labels=paste("Sens = ",round(mean(as.data.frame(ROC_sens_glm_45@y.values)[,1]),digits=2),sep=""),adj=1)
+text(1,0.05,labels=paste("Spec = ",round(mean(as.data.frame(ROC_sens_glm_45@x.values)[,1]),digits=2),sep=""),adj=1)
+
+# Threshold 0.95
+
+rates_glm_95 <- prediction(glm.pred_95_c, blueTarpTrain$Blue_Tarp_or_Not)
+roc_glm_95<-performance(rates_glm_95,measure="tpr", x.measure="fpr")
+plot(roc_glm_95, colorize = TRUE, main="ROC Curve GLM - 0.95")
+lines(x = c(0,1), y = c(0,1), col="red")
+
+ROC_sens_glm_95 <- performance(prediction(glm.pred_95_c, blueTarpTrain$Blue_Tarp_or_Not),"sens","spec") #pull sen and spec values 
+auc_glm_95 <- performance(rates_glm_95, measure = "auc")
+text(1,0.25,labels=paste("AUC = ",round(auc_glm_95@y.values[[1]],digits=2),sep=""),adj=1)
+text(1,0.15,labels=paste("Sens = ",round(mean(as.data.frame(ROC_sens_glm_95@y.values)[,1]),digits=2),sep=""),adj=1)
+text(1,0.05,labels=paste("Spec = ",round(mean(as.data.frame(ROC_sens_glm_95@x.values)[,1]),digits=2),sep=""),adj=1)
+
+```
+
+
+
+LDA
+### Threshold 0.5
+```{r 11}
+"Threshold: 0.5"
+lda.pred <- predict(lda.fit, newdata =blueTarpTrain, type = "prob")
+lda.class_50=ifelse(lda.pred[,2]>0.5,1,0)
+cm.lda_50 <- confusionMatrix(factor(lda.class_50), factor(blueTarpTrain$Blue_Tarp_or_Not), positive="1")
+cm.lda_50
+
+"Threshold: 0.3"
+lda.class_30=ifelse(lda.pred[,2]>0.3,1,0)
+cm.lda_30 <- confusionMatrix(factor(lda.class_30), factor(blueTarpTrain$Blue_Tarp_or_Not), positive="1")
+cm.lda_30
+
+"Threshold: 0.99"
+lda.class_99=ifelse(lda.pred[,2]>0.99,1,0)
+cm.lda_99 <- confusionMatrix(factor(lda.class_99), factor(blueTarpTrain$Blue_Tarp_or_Not), positive="1")
+cm.lda_99
+
+```{r}
+par(pty="s")
+lda_50 <- roc(blueTarpTrain$Blue_Tarp_or_Not, lda.class_50, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="LDA ROC Curves") 
+lda_30 <- roc(blueTarpTrain$Blue_Tarp_or_Not, lda.class_30, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="blue", lwd=4, print.auc.y=42,print.auc=TRUE, main="LDA ROC Curves", add=TRUE) 
+lda_99 <- roc(blueTarpTrain$Blue_Tarp_or_Not, lda.class_99, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="green", lwd=4, print.auc.y=35,print.auc=TRUE, main="LDA ROC Curves", add=TRUE)
+legend("bottomright",legend=c("50%", "30%", "99%"), col=c("#965fd4","blue", "green"), lwd=4)
+```
+
+### Threshold 0.5
+```{r}
+
+qda.pred <- predict(qda.fit, newdata =blueTarpTrain, type = "prob")
+
+"Threshold: 0.5"
+qda.class_50=ifelse(qda.pred[,2]>0.5,1,0)
+cm.qda_50 <- confusionMatrix(factor(qda.class_50), factor(blueTarpTrain$Blue_Tarp_or_Not), positive="1")
+cm.qda_50
+
+"Threshold: 0.8"
+qda.class_80=ifelse(qda.pred[,2]>0.8,1,0)
+cm.qda_80 <- confusionMatrix(factor(qda.class_80), factor(blueTarpTrain$Blue_Tarp_or_Not), positive="1")
+cm.qda_80
+```
+
+```{r}
+par(pty="s")
+roc(blueTarpTrain$Blue_Tarp_or_Not, qda.class_50, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", main ='QDA ROC Curves', col="#965fd4", lwd=4, print.auc=TRUE,print.auc.y=42) 
+roc(blueTarpTrain$Blue_Tarp_or_Not, qda.class_80, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", main ='QDA ROC Curves', col="blue", lwd=4, print.auc=TRUE, add=TRUE, print.auc.y=30) 
+legend("bottomright",legend=c("50%", "80%"), col=c("#965fd4","blue"), lwd=4)
+
+```
+
+KNN
+```{r}
+"Threshold 0.5"
+knn.class_50=ifelse(knn.pred[,2]>0.5,1,0)
+cm.knn_50 <- confusionMatrix(factor(knn.class_50), factor(blueTarpTrain$Blue_Tarp_or_Not), positive="1")
+cm.knn_50
+
+"Threshold 0.8"
+knn.class_80=ifelse(knn.pred[,2]>0.8,1,0)
+cm.knn_80 <- confusionMatrix(factor(knn.class_80), factor(blueTarpTrain$Blue_Tarp_or_Not), positive="1")
+cm.knn_80
+```
+
+```{r}
+par(pty="s")
+knn_5_50 <- roc(blueTarpTrain$Blue_Tarp_or_Not, knn.class_50, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="K=5 ROC Curves") 
+knn_5_80 <- roc(blueTarpTrain$Blue_Tarp_or_Not, knn.class_80, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="blue", lwd=4, print.auc.y=42,print.auc=TRUE, main="K=5 ROC Curves", add=TRUE) 
+legend("bottomright",legend=c("50%", "80%"), col=c("#965fd4","blue"), lwd=4)
+```
+
+
+############################
+glm.pred_014 <- ifelse(glm.prob[,2]>0.014,1,0)
+cm.glm_014 <- confusionMatrix(factor(glm.pred_014), factor(blueTarpTrain$Blue_Tarp_or_Not), positive = '1') 
+"Threshold: 0.014"
+cm.glm_014
+
+###############################
+
+GLM
+[1] "Threshold: 0.15"
+Confusion Matrix and Statistics
+
+          Reference
+Prediction     0     1
+         0 48633    87
+         1   344  1531
+                                          
+               Accuracy : 0.9915          
+                 95% CI : (0.9906, 0.9923)
+    No Information Rate : 0.968           
+    P-Value [Acc > NIR] : < 2.2e-16       
+                                          
+                  Kappa : 0.8722          
+                                          
+ Mcnemar's Test P-Value : < 2.2e-16       
+                                          
+            Sensitivity : 0.94623         
+            Specificity : 0.99298         
+         Pos Pred Value : 0.81653         
+         Neg Pred Value : 0.99821         
+             Prevalence : 0.03198         
+         Detection Rate : 0.03026         
+   Detection Prevalence : 0.03706         
+      Balanced Accuracy : 0.96960         
+                                          
+       'Positive' Class : 1   
+
+LDA
+[1] "Threshold: 0.10"
+Confusion Matrix and Statistics
+
+          Reference
+Prediction     0     1
+         0 48322   247
+         1   655  1371
+                                         
+               Accuracy : 0.9822         
+                 95% CI : (0.981, 0.9833)
+    No Information Rate : 0.968          
+    P-Value [Acc > NIR] : < 2.2e-16      
+                                         
+                  Kappa : 0.7433         
+                                         
+ Mcnemar's Test P-Value : < 2.2e-16      
+                                         
+            Sensitivity : 0.84734        
+            Specificity : 0.98663        
+         Pos Pred Value : 0.67670        
+         Neg Pred Value : 0.99491        
+             Prevalence : 0.03198        
+         Detection Rate : 0.02710        
+   Detection Prevalence : 0.04004        
+      Balanced Accuracy : 0.91698        
+                                         
+       'Positive' Class : 1      
+
+
+QDA
+[1] "Threshold: 0.10"
+Confusion Matrix and Statistics
+
+          Reference
+Prediction     0     1
+         0 48621   162
+         1   356  1456
+                                          
+               Accuracy : 0.9898          
+                 95% CI : (0.9888, 0.9906)
+    No Information Rate : 0.968           
+    P-Value [Acc > NIR] : < 2.2e-16       
+                                          
+                  Kappa : 0.8437          
+                                          
+ Mcnemar's Test P-Value : < 2.2e-16       
+                                          
+            Sensitivity : 0.89988         
+            Specificity : 0.99273         
+         Pos Pred Value : 0.80353         
+         Neg Pred Value : 0.99668         
+             Prevalence : 0.03198         
+         Detection Rate : 0.02878         
+   Detection Prevalence : 0.03581         
+      Balanced Accuracy : 0.94630         
+                                          
+       'Positive' Class : 1  
+
+KNN
+[1] "Threshold: 0.077"
+Confusion Matrix and Statistics
+
+          Reference
+Prediction     0     1
+         0 48808    19
+         1   169  1599
+                                          
+               Accuracy : 0.9963          
+                 95% CI : (0.9957, 0.9968)
+    No Information Rate : 0.968           
+    P-Value [Acc > NIR] : < 2.2e-16       
+                                          
+                  Kappa : 0.9426          
+                                          
+ Mcnemar's Test P-Value : < 2.2e-16       
+                                          
+            Sensitivity : 0.98826         
+            Specificity : 0.99655         
+         Pos Pred Value : 0.90441         
+         Neg Pred Value : 0.99961         
+             Prevalence : 0.03198         
+         Detection Rate : 0.03160         
+   Detection Prevalence : 0.03494         
+      Balanced Accuracy : 0.99240         
+                                          
+       'Positive' Class : 1         
