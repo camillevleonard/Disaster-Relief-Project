@@ -102,10 +102,19 @@ The data was visualized with the ggpairs function. For a pair of variables chose
 
 Inspection of the generated figure indicated that   
 ```{r, message=False}
+#Reference [1]
+# The palette with grey:
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+# To use for fills, add
+#scale_fill_manual(values=cbPalette)
+  
 df$Class <- factor(df$Class) #make Class a factor variable. 
-ggpairs(df[,2:4], lower.panel = NULL, upper = list(continuous = wrap("cor", size = 3)), aes(color=df$Class)) #view scatter and correlations
+ggpairs(df[,2:4], lower.panel = NULL, upper = list(continuous = wrap("cor", size = 3)), aes(color=df$Class))# + scale_fill_manual(values=cbPalette) 
+#view scatter and correlations
 attach(df) #attach df variables 
 ```
+!!!!!!!!!! IF I HAVE TIME MAKE A SELECTOR TO CHOOSE COLOR SCHEME FOR NOT COLOR BLIND OR DIFFERENT KINDS OF COLOR BLIND https://socviz.co/refineplots.html 
+
 
 !!!!!!!!!!!!! Make some comments about this figure or remove it...
 ```{r 3}
@@ -126,7 +135,7 @@ The goal of this project is to identify blue tarps from non-blue tarps ...
 ```{r 4}
 df <- cbind(mutate(df, "Blue_Tarp_or_Not"=ifelse(Class != "Blue Tarp", 0, 1))) #add binary column indicating whether the Class variable is "Blue Tarp" or not
 attach(df)
-Blue_Tarp_or_Not <- as.factor(Blue_Tarp_or_Not) #ensure new column is a factor 
+df$Blue_Tarp_or_Not <- factor(Blue_Tarp_or_Not) #ensure new column is a factor 
 df
 df_factor <- df[, -1]
 tail(df_factor)
@@ -136,7 +145,7 @@ tail(df_factor)
 ## Logistic Regression 
 Fit a Logistic Regression Model 
 !!!Need to turn on the fold result saving ... 
-```{r 6, message=FALSE, warning=FALSE}
+```{r Log Reg, message=FALSE, warning=FALSE}
 fitControl <- trainControl(method = "cv",
                            number = 10,
                            returnResamp = 'all',
@@ -157,8 +166,7 @@ summary(glm.fit)
 
 
 Test model performance on Train data to select threshold values... 
-```{r}
-pass
+```{r Log Reg pred}
 glm.prob <- predict(glm.fit, newdata=df_factor, type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
 par(pty="s")
 glm_roc <- roc(df_factor$Blue_Tarp_or_Not, glm.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="GLM ROC Curve") 
@@ -166,11 +174,12 @@ glm_roc <- roc(df_factor$Blue_Tarp_or_Not, glm.prob[,2], plot=TRUE, legacy.axes=
 
 ## LDA 
 
-```{r 10}
-pass
-fitControl <- trainControl(method = "repeatedcv",
+```{r LDA}
+fitControl <- trainControl(method = "cv",
                            number = 10,
-                           repeats = 10)
+                           returnResamp = 'all',
+                           savePredictions = 'final',
+                           classProbs = TRUE)
 
 set.seed(4)
 lda.fit <- caret::train(Blue_Tarp_or_Not~Red+Green+Blue,
@@ -185,7 +194,7 @@ lda.fit
 ```
 
 
-```{r}
+```{r LDA pred}
 lda.prob <- predict(lda.fit, newdata=df_factor, type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
 par(pty="s")
 lda_roc <- roc(df_factor$Blue_Tarp_or_Not, lda.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="LDA ROC Curve") 
@@ -194,11 +203,13 @@ lda_roc <- roc(df_factor$Blue_Tarp_or_Not, lda.prob[,2], plot=TRUE, legacy.axes=
 
 ## QDA 
 
-```{r}
-pass
-fitControl <- trainControl(method = "repeatedcv",
+```{r QDA}
+
+fitControl <- trainControl(method = "cv",
                            number = 10,
-                           repeats = 10)
+                           returnResamp = 'all',
+                           savePredictions = 'final',
+                           classProbs = TRUE)
 
 set.seed(4)
 qda.fit <- caret::train(Blue_Tarp_or_Not~Red+Green+Blue,
@@ -212,8 +223,8 @@ qda.fit
 
 ```
 
-```{r}
-pass
+```{r QDA pred}
+
 qda.prob <- predict(qda.fit, newdata=df_factor, type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
 par(pty="s")
 qda_roc <- roc(df_factor$Blue_Tarp_or_Not, qda.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="QDA ROC Curve") 
@@ -221,11 +232,13 @@ qda_roc <- roc(df_factor$Blue_Tarp_or_Not, qda.prob[,2], plot=TRUE, legacy.axes=
 
 ## KNN 
 
-```{r}
-pass
-fitControl <- trainControl(method = "repeatedcv",
-                           number = 10, #number of folds
-                           repeats = 10) # number of times each fold is run; can the number of repeats be reduced? do both of these need to be 10?
+```{r KNN}
+
+fitControl <- trainControl(method = "cv",
+                           number = 10,
+                           returnResamp = 'all',
+                           savePredictions = 'final',
+                           classProbs = TRUE)
 
 set.seed(4)
 knn.fit <- train(Blue_Tarp_or_Not~Red+Green+Blue,
@@ -233,7 +246,7 @@ knn.fit <- train(Blue_Tarp_or_Not~Red+Green+Blue,
                     preProcess=c("center","scale"),
                     method="knn",
                     trControl= fitControl,
-                    tuneLength=10
+                    tuneLength=5
                     )
 
 knn.fit
@@ -241,8 +254,8 @@ knn.fit
 
 ```
 
-```{r}
-pass
+```{r KNN pred}
+
 knn.prob <- predict(knn.fit, newdata=df_factor, type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
 par(pty="s")
 knn_roc <- roc(df_factor$Blue_Tarp_or_Not, knn.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="KNN ROC Curve") 
@@ -250,7 +263,84 @@ knn_roc <- roc(df_factor$Blue_Tarp_or_Not, knn.prob[,2], plot=TRUE, legacy.axes=
 
 ## Random Forest 
 
+```{r Random Forest}
+fitControl <- trainControl(method = "cv",
+                           number = 10,
+                           returnResamp = 'all',
+                           savePredictions = 'final',
+                           classProbs = TRUE)
+
+set.seed(4)
+rf.fit <- train(Blue_Tarp_or_Not~Red+Green+Blue,
+                    data = df_factor,
+                    preProcess=c("center","scale"),
+                    method="rf", #what is the difference between the different caret rf models??
+                    trControl= fitControl,
+                    tuneLength=3
+                    )
+
+rf.fit
+```
+
+
 ## SVM
+```{r SVM Radial}
+fitControl <- trainControl(method = "cv",
+                           number = 10,
+                           returnResamp = 'all',
+                           savePredictions = 'final',
+                           classProbs = TRUE)
+
+set.seed(4)
+svm.radial.fit <- train(Blue_Tarp_or_Not~Red+Green+Blue,
+                    data = df_factor,
+                    preProcess=c("center","scale"),
+                    method="svmRadial",
+                    trControl= fitControl,
+                    tuneLength=3
+                    )
+
+svm.radial.fit
+```
+```{r SVM Linear}
+fitControl <- trainControl(method = "cv",
+                           number = 10,
+                           returnResamp = 'all',
+                           savePredictions = 'final',
+                           classProbs = TRUE)
+
+set.seed(4)
+svm.linear.fit <- train(Blue_Tarp_or_Not~Red+Green+Blue,
+                    data = df_factor,
+                    preProcess=c("center","scale"),
+                    method="svmLinear",
+                    trControl= fitControl,
+                    tuneLength=3
+                    )
+
+svm.linear.fit
+```
+
+```{r SVM Poly}
+fitControl <- trainControl(method = "cv",
+                           number = 10,
+                           returnResamp = 'all',
+                           savePredictions = 'final',
+                           classProbs = TRUE)
+
+set.seed(4)
+svm.poly.fit <- train(Blue_Tarp_or_Not~Red+Green+Blue,
+                    data = df_factor,
+                    preProcess=c("center","scale"),
+                    method="svmPoly",
+                    trControl= fitControl,
+                    tuneLength=3
+                    )
+
+svm.poly.fit
+```
+
+The final values used for the model were degree = 3, scale = 0.1 and C = 1.
 
 ## K-Folds Out of Sampling Performance 
 
@@ -304,6 +394,7 @@ parallel::stopCluster(cl)
 
 # References and Works Cited 
 
+[1] http://www.cookbook-r.com/Graphs/Colors_(ggplot2)/#a-colorblind-friendly-palette 
 * Thanks to Derek Banks for sharing code for doing multicore processing
 * Assigning color to ggplot scatter: https://www.r-graph-gallery.com/ggplot2-color.html
 * Change correlation text size ggpairs : https://stackoverflow.com/questions/8599685/how-to-change-correlation-text-size-in-ggpairs
