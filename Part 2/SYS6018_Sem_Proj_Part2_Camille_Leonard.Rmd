@@ -101,7 +101,7 @@ The data provided for analysis was generated from overhead images and stored as 
 The data was visualized with the ggpairs function. For a pair of variables chosen from the data frame, [Ggpairs](https://www.r-graph-gallery.com/199-correlation-matrix-with-ggally.html#:~:text=The%20ggpairs()%20function%20of,left%20part%20of%20the%20figure.&text=Variable%20distribution%20is%20available%20on%20the%20diagonal.) generates a scatterplot, displays a Pearson correlation, and, on the diagonal, shows a variable distribution. The plots were also color-coded by class. The class describes what kind of object a pixel is associated with. In our data frame there were the following classes: Blue Tarp, Rooftop, Soil, Various Non-tarp, and Vegetation. 
 
 Inspection of the generated figure indicated that   
-```{r, message=False}
+```{r, message=FALSE }
 #Reference [1]
 # The palette with grey:
 cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
@@ -130,13 +130,13 @@ featurePlot(x = df[,2:4],
 
 ## Prepare Data Frame for Analysis 
 
-The goal of this project is to identify blue tarps from non-blue tarps ... 
+The goal of this project is to identify blue tarps from non-blue tarps ... Convert Class column into a binary categorical variable indicating if a pixel indicates a blue tarp or not a blue tarp. 
 
 ```{r 4}
 df <- cbind(mutate(df, "Blue_Tarp_or_Not"=ifelse(Class != "Blue Tarp", 0, 1))) #add binary column indicating whether the Class variable is "Blue Tarp" or not
 attach(df)
-df$Blue_Tarp_or_Not <- factor(Blue_Tarp_or_Not) #ensure new column is a factor 
-df
+df$Blue_Tarp_or_Not <- factor(Blue_Tarp_or_Not, labels = c("NBT", "BT"))#, levels =c(0,1), labels = c("NBT", "BT")) #ensure new column is a factor 
+head(df)
 df_factor <- df[, -1]
 tail(df_factor)
 ```
@@ -146,6 +146,7 @@ tail(df_factor)
 Fit a Logistic Regression Model 
 !!!Need to turn on the fold result saving ... 
 ```{r Log Reg, message=FALSE, warning=FALSE}
+#pass
 fitControl <- trainControl(method = "cv",
                            number = 10,
                            returnResamp = 'all',
@@ -162,19 +163,38 @@ glm.fit <- caret::train(Blue_Tarp_or_Not~Red+Green+Blue,
 glm.fit
 
 summary(glm.fit)
+glm.fit$resample #point est +/- std from 10 folds "variation in the third decimal place"... 
 ```
 
 
 Test model performance on Train data to select threshold values... 
 ```{r Log Reg pred}
+#pass
 glm.prob <- predict(glm.fit, newdata=df_factor, type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
 par(pty="s")
 glm_roc <- roc(df_factor$Blue_Tarp_or_Not, glm.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="GLM ROC Curve") 
 ```
+```{r Log Reg Threshold}
+lr.thresh <- 0.5
+glm.pred_thresh <- factor(ifelse(glm.prob[,2]>lr.thresh,"BT", "NBT"), levels=c("NBT", "BT"))
+cm.glm_thresh <- confusionMatrix(factor(glm.pred_thresh),df_factor$Blue_Tarp_or_Not, positive = "BT") 
+"Threshold: 0.5"
+cm.glm_thresh
+
+acc_LR <- cm.glm_thresh[["overall"]][["Accuracy"]]*100
+auc_LR <- glm_roc[["auc"]]
+thresh_LR <- lr.thresh
+sens_LR <-  cm.glm_thresh[["byClass"]][["Sensitivity"]]*100
+spec_LR <- cm.glm_thresh[["byClass"]][["Specificity"]]*100
+FDR_LR <- ((cm.glm_thresh[["table"]][2,1])/(cm.glm_thresh[["table"]][2,1]+cm.glm_thresh[["table"]][2,2]))*100
+prec_LR <- cm.glm_thresh[["byClass"]][["Precision"]]*100
+```
+
 
 ## LDA 
 
 ```{r LDA}
+#pass
 fitControl <- trainControl(method = "cv",
                            number = 10,
                            returnResamp = 'all',
@@ -195,16 +215,32 @@ lda.fit
 
 
 ```{r LDA pred}
+#pass
 lda.prob <- predict(lda.fit, newdata=df_factor, type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
 par(pty="s")
 lda_roc <- roc(df_factor$Blue_Tarp_or_Not, lda.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="LDA ROC Curve") 
 ```
 
+```{r LDA Threshold}
+lda.thresh <- 0.5
+lda.pred_thresh <- factor(ifelse(lda.prob[,2]>lda.thresh,"BT", "NBT"), levels=c("NBT", "BT"))
+cm.lda_thresh <- confusionMatrix(factor(lda.pred_thresh),df_factor$Blue_Tarp_or_Not, positive = "BT") 
+"Threshold: 0.5"
+cm.lda_thresh
+
+acc_lda <- cm.lda_thresh[["overall"]][["Accuracy"]]*100
+auc_lda <- lda_roc[["auc"]]
+thresh_lda <- lr.thresh
+sens_lda <-  cm.lda_thresh[["byClass"]][["Sensitivity"]]*100
+spec_lda <- cm.lda_thresh[["byClass"]][["Specificity"]]*100
+FDR_lda <- ((cm.lda_thresh[["table"]][2,1])/(cm.lda_thresh[["table"]][2,1]+cm.lda_thresh[["table"]][2,2]))*100
+prec_lda <- cm.lda_thresh[["byClass"]][["Precision"]]*100
+```
 
 ## QDA 
 
 ```{r QDA}
-
+pass
 fitControl <- trainControl(method = "cv",
                            number = 10,
                            returnResamp = 'all',
@@ -224,7 +260,7 @@ qda.fit
 ```
 
 ```{r QDA pred}
-
+pass
 qda.prob <- predict(qda.fit, newdata=df_factor, type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
 par(pty="s")
 qda_roc <- roc(df_factor$Blue_Tarp_or_Not, qda.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="QDA ROC Curve") 
@@ -233,7 +269,7 @@ qda_roc <- roc(df_factor$Blue_Tarp_or_Not, qda.prob[,2], plot=TRUE, legacy.axes=
 ## KNN 
 
 ```{r KNN}
-
+pass
 fitControl <- trainControl(method = "cv",
                            number = 10,
                            returnResamp = 'all',
@@ -255,7 +291,7 @@ knn.fit
 ```
 
 ```{r KNN pred}
-
+pass
 knn.prob <- predict(knn.fit, newdata=df_factor, type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
 par(pty="s")
 knn_roc <- roc(df_factor$Blue_Tarp_or_Not, knn.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="KNN ROC Curve") 
@@ -264,6 +300,7 @@ knn_roc <- roc(df_factor$Blue_Tarp_or_Not, knn.prob[,2], plot=TRUE, legacy.axes=
 ## Random Forest 
 
 ```{r Random Forest}
+pass
 fitControl <- trainControl(method = "cv",
                            number = 10,
                            returnResamp = 'all',
@@ -285,6 +322,7 @@ rf.fit
 
 ## SVM
 ```{r SVM Radial}
+pass
 fitControl <- trainControl(method = "cv",
                            number = 10,
                            returnResamp = 'all',
@@ -303,6 +341,7 @@ svm.radial.fit <- train(Blue_Tarp_or_Not~Red+Green+Blue,
 svm.radial.fit
 ```
 ```{r SVM Linear}
+pass
 fitControl <- trainControl(method = "cv",
                            number = 10,
                            returnResamp = 'all',
@@ -321,7 +360,8 @@ svm.linear.fit <- train(Blue_Tarp_or_Not~Red+Green+Blue,
 svm.linear.fit
 ```
 
-```{r SVM Poly}
+```{r SVM Poly, eval=FALSE}
+pass
 fitControl <- trainControl(method = "cv",
                            number = 10,
                            returnResamp = 'all',
@@ -348,16 +388,16 @@ The final values used for the model were degree = 3, scale = 0.1 and C = 1.
 
 !!!!! THESE VALUES HAVE NOT BEEN UPDATED, POSSIBLY CONSIDER AUTOMATING THEM  
 
-|                   Method | KNN (k = 5)  |    LDA    |    QDA    | Log. Regression | Random Forest (tuning param = ?) | SVM (tuning param = ?)|
-|-------------------------:|:------------:|:---------:|:---------:|:---------------:|:--------------------------------:|:---------------------:|
-|                 Accuracy | 99.6%        | 98.2%     | 98.9%     | 99.2%           | | |
-|                      AUC | 100%         | 98.9%     | 99.8%     | 99.8%           | | |
-|                      ROC |              |           |           |                 | | |
-|                Threshold | 0.077        | 0.10      | 0.10      | 0.15            | | |
-| Sensitivity=Recall=Power | 98.8%        | 84.7%     | 90.0%     | 94.6%           | | |
-|        Specificity=1-FPR | 99.7%        | 98.7%     | 99.3%     | 99.3%           | | |
-|                      FDR | 9.6%         | 32.3%     | 19.6%     | 18.3%           | | |
-|            Precision=PPV | 90.4%        | 67.3%     | 80.4%     | 81.7%           | | |
+|                   Method | KNN (k = `r k_knn`) |    LDA    |    QDA    | Log. Regression | Random Forest (tuning param = ?) | SVM (tuning param = ?)|
+|-------------------------:|:--------------:|:---------:|:---------:|:---------------:|:--------------------------------:|:---------------------:|
+|                 Accuracy | `r acc_knn`%   | `r acc_lda`%   | `r acc_qda`%   | `r acc_LR`%   | `r acc_RF`    | `r acc_SVM`   |
+|                      AUC | `r auc_knn`%   | `r auc_lda`%   | `r auc_qda`%   | `r auc_LR`%   | `r auc_RF`    | `r auc_SVM`   |
+|                      ROC |                |                |                |               |               |               |
+|                Threshold | `r thresh_knn` | `r thresh_lda` | `r thresh_qda` | `r thresh_LR` | `r thresh_RF` |`r thresh_SVM` |
+| Sensitivity=Recall=Power | `r sens_knn`%  | `r sens_lda`%  | `r sens_qda`%  | `r sens_LR`%  |`r sens_RF`    | `r sens_SVM`  |
+|        Specificity=1-FPR | `r spec_knn`%  | `r spec_lda`%  | `r spec_qda`%  | `r spec_LR`%  |`r spec_RF`    |`r spec_SVM`   |
+|                      FDR | `r FDR_knn`%   | `r FDR_lda`%   | `r FDR_qda`%   | `r FDR_LR`%   | `r FDR_RF`    |`r FDR_SVM`    |
+|            Precision=PPV | `r prec_knn`%  | `r prec_lda`%  | `r prec_qda`%  | `r prec_LR`%  |`r prec_RF`    | `r prec_SVM`  |
 
 ## Model Performance 
 
@@ -375,16 +415,17 @@ parallel::stopCluster(cl)
 
 !!!!! THESE VALUES HAVE NOT BEEN UPDATED, POSSIBLY CONSIDER AUTOMATING THEM  
 
-|                   Method | KNN (k = 5)  |    LDA    |    QDA    | Log. Regression | Random Forest (tuning param = ?) | SVM (tuning param = ?)|
-|-------------------------:|:------------:|:---------:|:---------:|:---------------:|:--------------------------------:|:---------------------:|
-|                 Accuracy | 99.6%        | 98.2%     | 98.9%     | 99.2%           | | |
-|                      AUC | 100%         | 98.9%     | 99.8%     | 99.8%           | | |
-|                      ROC |              |           |           |                 | | |
-|                Threshold | 0.077        | 0.10      | 0.10      | 0.15            | | |
-| Sensitivity=Recall=Power | 98.8%        | 84.7%     | 90.0%     | 94.6%           | | |
-|        Specificity=1-FPR | 99.7%        | 98.7%     | 99.3%     | 99.3%           | | |
-|                      FDR | 9.6%         | 32.3%     | 19.6%     | 18.3%           | | |
-|            Precision=PPV | 90.4%        | 67.3%     | 80.4%     | 81.7%           | | |
+|                   Method | KNN (k = `r k_knn`) |    LDA    |    QDA    | Log. Regression | Random Forest (tuning param = ?) | SVM (tuning param = ?)|
+|-------------------------:|:--------------:|:---------:|:---------:|:---------------:|:--------------------------------:|:---------------------:|
+|                 Accuracy | `r acc_knn_FHO`%   | `r acc_lda_FHO`%   | `r acc_qda_FHO`%   | `r acc_LR_FHO`%   | `r acc_RF_FHO`    | `r acc_SVM_FHO`   |
+|                      AUC | `r auc_knn_FHO`%   | `r auc_lda_FHO`%   | `r auc_qda_FHO`%   | `r auc_LR_FHO`%   | `r auc_RF_FHO`    | `r auc_SVM_FHO`   |
+|                      ROC |                    |                    |                    |                   |                   |                   |
+|                Threshold | `r thresh_knn_FHO` | `r thresh_lda_FHO` | `r thresh_qda_FHO` | `r thresh_LR_FHO` | `r thresh_RF_FHO` |`r thresh_SVM_FHO` |
+| Sensitivity=Recall=Power | `r sens_knn_FHO`%  | `r sens_lda_FHO`%  | `r sens_qda_FHO`%  | `r sens_LR_FHO`%  |`r sens_RF_FHO`    | `r sens_SVM_FHO`  |
+|        Specificity=1-FPR | `r spec_knn_FHO`%  | `r spec_lda_FHO`%  | `r spec_qda_FHO`%  | `r spec_LR_FHO`%  |`r spec_RF_FHO`    |`r spec_SVM_FHO`   |
+|                      FDR | `r FDR_knn_FHO`%   | `r FDR_lda_FHO`%   | `r FDR_qda_FHO`%   | `r FDR_LR_FHO`%   | `r FDR_RF_FHO`    |`r FDR_SVM_FHO`    |
+|            Precision=PPV | `r prec_knn_FHO`%  | `r prec_lda_FHO`%  | `r prec_qda_FHO`%  | `r prec_LR_FHO`%  |`r prec_RF_FHO`    | `r prec_SVM_FHO`  |
+
 
 
 ## Future Work 
@@ -394,15 +435,20 @@ parallel::stopCluster(cl)
 
 # References and Works Cited 
 
-[1] http://www.cookbook-r.com/Graphs/Colors_(ggplot2)/#a-colorblind-friendly-palette 
+* [1] Creating and using color blindness friendly color pallets: http://www.cookbook-r.com/Graphs/Colors_(ggplot2)/#a-colorblind-friendly-palette 
 * Thanks to Derek Banks for sharing code for doing multicore processing
 * Assigning color to ggplot scatter: https://www.r-graph-gallery.com/ggplot2-color.html
 * Change correlation text size ggpairs : https://stackoverflow.com/questions/8599685/how-to-change-correlation-text-size-in-ggpairs
 * Information on RGB color model: https://en.wikipedia.org/wiki/RGB_color_model
-* Inspiration to color-code the ggpairs figure came from Professor Schwartz showing us another student's project [Michael Davies] in class.  
+* Inspiration to color-code the ggpairs figure came from Professor Schwartz showing us another student's project [Michael Davies] in class. 
+* How to make the tables update automatically with "`r var_name`" assist by Alex Link and Michael Davies 
 
 # Appendix A: Analysis Methods Reference Info
 
+|                         | LDA               | QDA           |
+|:-----------------------|:-------------------:|:--------------:|
+| Assumptions| this is a lot of text what happens when you put this much text in this table | |
+|Tuning Parameters | | | 
 
 
 
