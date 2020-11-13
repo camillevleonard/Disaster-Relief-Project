@@ -240,7 +240,7 @@ prec_lda <- cm.lda_thresh[["byClass"]][["Precision"]]*100
 ## QDA 
 
 ```{r QDA}
-pass
+#pass
 fitControl <- trainControl(method = "cv",
                            number = 10,
                            returnResamp = 'all',
@@ -260,16 +260,31 @@ qda.fit
 ```
 
 ```{r QDA pred}
-pass
+#pass
 qda.prob <- predict(qda.fit, newdata=df_factor, type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
 par(pty="s")
 qda_roc <- roc(df_factor$Blue_Tarp_or_Not, qda.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="QDA ROC Curve") 
+```
+```{r QDA Threshold}
+qda.thresh <- 0.5
+qda.pred_thresh <- factor(ifelse(qda.prob[,2]>qda.thresh,"BT", "NBT"), levels=c("NBT", "BT"))
+cm.qda_thresh <- confusionMatrix(factor(qda.pred_thresh),df_factor$Blue_Tarp_or_Not, positive = "BT") 
+"Threshold: 0.5"
+cm.qda_thresh
+
+acc_qda <- cm.qda_thresh[["overall"]][["Accuracy"]]*100
+auc_qda <- qda_roc[["auc"]]
+thresh_qda <- lr.thresh
+sens_qda <-  cm.qda_thresh[["byClass"]][["Sensitivity"]]*100
+spec_qda <- cm.qda_thresh[["byClass"]][["Specificity"]]*100
+FDR_qda <- ((cm.qda_thresh[["table"]][2,1])/(cm.qda_thresh[["table"]][2,1]+cm.qda_thresh[["table"]][2,2]))*100
+prec_qda <- cm.qda_thresh[["byClass"]][["Precision"]]*100
 ```
 
 ## KNN 
 
 ```{r KNN}
-pass
+#pass
 fitControl <- trainControl(method = "cv",
                            number = 10,
                            returnResamp = 'all',
@@ -291,16 +306,32 @@ knn.fit
 ```
 
 ```{r KNN pred}
-pass
+#pass
 knn.prob <- predict(knn.fit, newdata=df_factor, type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
 par(pty="s")
 knn_roc <- roc(df_factor$Blue_Tarp_or_Not, knn.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="KNN ROC Curve") 
 ```
 
+```{r KNN Threshold}
+knn.thresh <- 0.5
+knn.pred_thresh <- factor(ifelse(knn.prob[,2]>knn.thresh,"BT", "NBT"), levels=c("NBT", "BT"))
+cm.knn_thresh <- confusionMatrix(factor(knn.pred_thresh),df_factor$Blue_Tarp_or_Not, positive = "BT") 
+"Threshold: 0.5"
+cm.knn_thresh
+
+acc_knn <- cm.knn_thresh[["overall"]][["Accuracy"]]*100
+auc_knn <- knn_roc[["auc"]]
+thresh_knn <- lr.thresh
+sens_knn <-  cm.knn_thresh[["byClass"]][["Sensitivity"]]*100
+spec_knn <- cm.knn_thresh[["byClass"]][["Specificity"]]*100
+FDR_knn <- ((cm.knn_thresh[["table"]][2,1])/(cm.knn_thresh[["table"]][2,1]+cm.knn_thresh[["table"]][2,2]))*100
+prec_knn <- cm.knn_thresh[["byClass"]][["Precision"]]*100
+k_knn <- knn.fit[["bestTune"]][["k"]]
+```
 ## Random Forest 
 
 ```{r Random Forest}
-pass
+#pass
 fitControl <- trainControl(method = "cv",
                            number = 10,
                            returnResamp = 'all',
@@ -318,11 +349,32 @@ rf.fit <- train(Blue_Tarp_or_Not~Red+Green+Blue,
 
 rf.fit
 ```
+```{r RF pred}
+#pass
+RF.prob <- predict(RF.fit, newdata=df_factor, type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
+par(pty="s")
+RF_roc <- roc(df_factor$Blue_Tarp_or_Not, RF.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="RF ROC Curve") 
+```
 
+```{r RF Threshold}
+RF.thresh <- 0.5
+RF.pred_thresh <- factor(ifelse(RF.prob[,2]>RF.thresh,"BT", "NBT"), levels=c("NBT", "BT"))
+cm.RF_thresh <- confusionMatrix(factor(RF.pred_thresh),df_factor$Blue_Tarp_or_Not, positive = "BT") 
+"Threshold: 0.5"
+cm.RF_thresh
+
+acc_RF <- cm.RF_thresh[["overall"]][["Accuracy"]]*100
+auc_RF <- RF_roc[["auc"]]
+thresh_RF <- lr.thresh
+sens_RF <-  cm.RF_thresh[["byClass"]][["Sensitivity"]]*100
+spec_RF <- cm.RF_thresh[["byClass"]][["Specificity"]]*100
+FDR_RF <- ((cm.RF_thresh[["table"]][2,1])/(cm.RF_thresh[["table"]][2,1]+cm.RF_thresh[["table"]][2,2]))*100
+prec_RF <- cm.RF_thresh[["byClass"]][["Precision"]]*100
+```
 
 ## SVM
 ```{r SVM Radial}
-pass
+#pass
 fitControl <- trainControl(method = "cv",
                            number = 10,
                            returnResamp = 'all',
@@ -340,8 +392,8 @@ svm.radial.fit <- train(Blue_Tarp_or_Not~Red+Green+Blue,
 
 svm.radial.fit
 ```
-```{r SVM Linear}
-pass
+```{r SVM Linear, eval=FALSE}
+#pass
 fitControl <- trainControl(method = "cv",
                            number = 10,
                            returnResamp = 'all',
@@ -361,7 +413,7 @@ svm.linear.fit
 ```
 
 ```{r SVM Poly, eval=FALSE}
-pass
+#pass
 fitControl <- trainControl(method = "cv",
                            number = 10,
                            returnResamp = 'all',
@@ -378,6 +430,29 @@ svm.poly.fit <- train(Blue_Tarp_or_Not~Red+Green+Blue,
                     )
 
 svm.poly.fit
+```
+
+```{r SVM pred}
+#pass
+SVM.prob <- predict(SVM.fit, newdata=df_factor, type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
+par(pty="s")
+SVM_roc <- roc(df_factor$Blue_Tarp_or_Not, SVM.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="SVM ROC Curve") 
+```
+
+```{r SVM Threshold}
+SVM.thresh <- 0.5
+SVM.pred_thresh <- factor(ifelse(SVM.prob[,2]>SVM.thresh,"BT", "NBT"), levels=c("NBT", "BT"))
+cm.SVM_thresh <- confusionMatrix(factor(SVM.pred_thresh),df_factor$Blue_Tarp_or_Not, positive = "BT") 
+"Threshold: 0.5"
+cm.SVM_thresh
+
+acc_SVM <- cm.SVM_thresh[["overall"]][["Accuracy"]]*100
+auc_SVM <- SVM_roc[["auc"]]
+thresh_SVM <- lr.thresh
+sens_SVM <-  cm.SVM_thresh[["byClass"]][["Sensitivity"]]*100
+spec_SVM <- cm.SVM_thresh[["byClass"]][["Specificity"]]*100
+FDR_SVM <- ((cm.SVM_thresh[["table"]][2,1])/(cm.SVM_thresh[["table"]][2,1]+cm.SVM_thresh[["table"]][2,2]))*100
+prec_SVM <- cm.SVM_thresh[["byClass"]][["Precision"]]*100
 ```
 
 The final values used for the model were degree = 3, scale = 0.1 and C = 1.
@@ -415,17 +490,18 @@ parallel::stopCluster(cl)
 
 !!!!! THESE VALUES HAVE NOT BEEN UPDATED, POSSIBLY CONSIDER AUTOMATING THEM  
 
-|                   Method | KNN (k = `r k_knn`) |    LDA    |    QDA    | Log. Regression | Random Forest (tuning param = ?) | SVM (tuning param = ?)|
-|-------------------------:|:--------------:|:---------:|:---------:|:---------------:|:--------------------------------:|:---------------------:|
-|                 Accuracy | `r acc_knn_FHO`%   | `r acc_lda_FHO`%   | `r acc_qda_FHO`%   | `r acc_LR_FHO`%   | `r acc_RF_FHO`    | `r acc_SVM_FHO`   |
-|                      AUC | `r auc_knn_FHO`%   | `r auc_lda_FHO`%   | `r auc_qda_FHO`%   | `r auc_LR_FHO`%   | `r auc_RF_FHO`    | `r auc_SVM_FHO`   |
-|                      ROC |                    |                    |                    |                   |                   |                   |
-|                Threshold | `r thresh_knn_FHO` | `r thresh_lda_FHO` | `r thresh_qda_FHO` | `r thresh_LR_FHO` | `r thresh_RF_FHO` |`r thresh_SVM_FHO` |
-| Sensitivity=Recall=Power | `r sens_knn_FHO`%  | `r sens_lda_FHO`%  | `r sens_qda_FHO`%  | `r sens_LR_FHO`%  |`r sens_RF_FHO`    | `r sens_SVM_FHO`  |
-|        Specificity=1-FPR | `r spec_knn_FHO`%  | `r spec_lda_FHO`%  | `r spec_qda_FHO`%  | `r spec_LR_FHO`%  |`r spec_RF_FHO`    |`r spec_SVM_FHO`   |
-|                      FDR | `r FDR_knn_FHO`%   | `r FDR_lda_FHO`%   | `r FDR_qda_FHO`%   | `r FDR_LR_FHO`%   | `r FDR_RF_FHO`    |`r FDR_SVM_FHO`    |
-|            Precision=PPV | `r prec_knn_FHO`%  | `r prec_lda_FHO`%  | `r prec_qda_FHO`%  | `r prec_LR_FHO`%  |`r prec_RF_FHO`    | `r prec_SVM_FHO`  |
-
+```{r}
+#|                   Method | KNN (k = `r k_knn`) |    LDA    |    QDA    | Log. Regression | Random Forest (tuning param = ?) | SVM (tuning param = ?)|
+#|-------------------------:|:--------------:|:---------:|:---------:|:---------------:|:--------------------------------:|:---------------------:|
+#|                 Accuracy | `r acc_knn_FHO`%   | `r acc_lda_FHO`%   | `r acc_qda_FHO`%   | `r acc_LR_FHO`%   | `r acc_RF_FHO`    | `r acc_SVM_FHO`   |
+#|                      AUC | `r auc_knn_FHO`%   | `r auc_lda_FHO`%   | `r auc_qda_FHO`%   | `r auc_LR_FHO`%   | `r auc_RF_FHO`    | `r auc_SVM_FHO`   |
+#|                      ROC |                    |                    |                    |                   |                   |                   |
+#|                Threshold | `r thresh_knn_FHO` | `r thresh_lda_FHO` | `r thresh_qda_FHO` | `r thresh_LR_FHO` | `r thresh_RF_FHO` |`r thresh_SVM_FHO` |
+#| Sensitivity=Recall=Power | `r sens_knn_FHO`%  | `r sens_lda_FHO`%  | `r sens_qda_FHO`%  | `r sens_LR_FHO`%  |`r sens_RF_FHO`    | `r sens_SVM_FHO`  |
+#|        Specificity=1-FPR | `r spec_knn_FHO`%  | `r spec_lda_FHO`%  | `r spec_qda_FHO`%  | `r spec_LR_FHO`%  |`r spec_RF_FHO`    |`r spec_SVM_FHO`   |
+#|                      FDR | `r FDR_knn_FHO`%   | `r FDR_lda_FHO`%   | `r FDR_qda_FHO`%   | `r FDR_LR_FHO`%   | `r FDR_RF_FHO`    |`r FDR_SVM_FHO`    |
+#|            Precision=PPV | `r prec_knn_FHO`%  | `r prec_lda_FHO`%  | `r prec_qda_FHO`%  | `r prec_LR_FHO`%  |`r prec_RF_FHO`    | `r prec_SVM_FHO`  |
+```
 
 
 ## Future Work 
