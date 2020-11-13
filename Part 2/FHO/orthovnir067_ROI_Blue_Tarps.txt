@@ -1,11 +1,4 @@
-; ENVI Output of ROIs (5.5.1) [Tue Nov 05 11:47:24 2019]
-; Number of ROIs: 1
-; File Dimension: 4178 x 6402
-;
-; ROI name: Blue Tarps
-; ROI rgb value: {255, 0, 0}
-; ROI npts: 4446
-;    ID     X     Y      Map X       Map Y        Lat         Lon   B1   B2   B3
+   ID     X     Y      Map X       Map Y        Lat         Lon   B1   B2   B3
       1   443   147  772350.00  2049951.37  18.522574  -72.420319   77   94   99
       2   441   148  772349.84  2049951.29  18.522574  -72.420321   79   98  103
       3   442   148  772349.92  2049951.29  18.522574  -72.420320   77   99  102

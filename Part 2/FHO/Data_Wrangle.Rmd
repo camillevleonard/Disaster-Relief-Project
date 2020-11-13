@@ -1,0 +1,74 @@
+---
+title: "SYS 6018 Semester Project Data Wrangle"
+author: "Camille Leonard"
+date: "11/13/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+df1 <- read.csv("orthovnir057_ROI_NON_Blue_Tarps.csv", header = TRUE)
+df1["Blue_Tarp_Or_Not"] <- "NBT"
+head(df1)
+```
+
+```{r}
+df2 <- read.csv("orthovnir067_ROI_Blue_Tarps.csv", header = TRUE)
+df2["Blue_Tarp_Or_Not"] <- "BT"
+head(df2)
+```
+
+```{r}
+df3 <- read.csv("orthovnir067_ROI_Blue_Tarps_data.csv", header = TRUE)
+head(df3)
+```
+
+```{r}
+df4 <- read.csv("orthovnir067_ROI_NOT_Blue_Tarps.csv", header = TRUE) 
+df4["Blue_Tarp_Or_Not"] <- "NBT"
+head(df4)
+```
+
+```{r}
+df5 <- read.csv("orthovnir069_ROI_Blue_Tarps.csv", header = TRUE) 
+df5["Blue_Tarp_Or_Not"] <- "BT"
+head(df5)
+```
+
+```{r}
+df6 <- read.csv("orthovnir069_ROI_NOT_Blue_Tarps.csv", header = TRUE)
+df6["Blue_Tarp_Or_Not"] <- "NBT"
+head(df6)
+```
+
+```{r}
+df7 <- read.csv("orthovnir078_ROI_Blue_Tarps.csv", header = TRUE)
+df7["Blue_Tarp_Or_Not"] <- "BT"
+head(df7)
+```
+
+```{r}
+df8 <- read.csv("orthovnir078_ROI_NON_Blue_Tarps.csv", header = TRUE)
+df8["Blue_Tarp_Or_Not"] <- "NBT"
+head(df8)
+```
+
+```{r}
+df_final <- rbind(df1, df2, df4, df5, df6, df7, df8) #Reference: https://clayford.github.io/dwir/dwr_05_combine_merge_rehsape_data.html 
+df_final <- df_final[,-1]
+#names(df_final) <- sub("ï..ID", "ID", names(df_final))
+head(df_final)
+#summary(df_final)
+```
+```{r}
+write.csv(df_final[,c(7:9)], file="SYS6018_FHO_Data.csv", row.names = FALSE) #Reference: https://datatofish.com/export-dataframe-to-csv-in-r/ 
+```
+

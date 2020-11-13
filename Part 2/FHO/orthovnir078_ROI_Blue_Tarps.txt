@@ -1,11 +1,4 @@
-; ENVI Output of ROIs (5.5.1) [Tue Nov 05 12:12:47 2019]
-; Number of ROIs: 1
-; File Dimension: 4753 x 6746
-;
-; ROI name: Region #1
-; ROI rgb value: {255, 0, 0}
-; ROI npts: 3206
-;    ID     X     Y      Map X       Map Y        Lat         Lon   B1   B2   B3
+   ID     X     Y      Map X       Map Y        Lat         Lon   B1   B2   B3
       1  1758   657  775216.66  2049967.14  18.522344  -72.393185   91  100  132
       2  1757   657  775216.58  2049967.14  18.522344  -72.393186   88  108  140
       3  1758   658  775216.66  2049967.06  18.522344  -72.393185   85  100  130

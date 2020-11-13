@@ -1,0 +1,69 @@
+orthovnir057_ROI_NON_Blue_Tarps.txt
+; ENVI Output of ROIs (5.5.1) [Tue Nov 05 11:28:14 2019]
+; Number of ROIs: 1
+; File Dimension: 4001 x 5447
+;
+; ROI name: Region #1
+; ROI rgb value: {255, 0, 0}
+; ROI npts: 3991823
+;
+
+orthovnir067_ROI_Blue_Tarps.txt
+; ENVI Output of ROIs (5.5.1) [Tue Nov 05 11:47:24 2019]
+; Number of ROIs: 1
+; File Dimension: 4178 x 6402
+;
+; ROI name: Blue Tarps
+; ROI rgb value: {255, 0, 0}
+; ROI npts: 4446
+; 
+
+orthovnir067_ROI_NOT_Blue_Tarps.txt
+; ENVI Output of ROIs (5.5.1) [Tue Nov 05 11:48:38 2019]
+; Number of ROIs: 1
+; File Dimension: 4178 x 6402
+;
+; ROI name: Region #1
+; ROI rgb value: {0, 255, 0}
+; ROI npts: 305211
+;
+
+orthovnir069_ROI_Blue_Tarps.txt
+; ENVI Output of ROIs (5.5.1) [Tue Nov 05 11:55:39 2019]
+; Number of ROIs: 1
+; File Dimension: 4583 x 6796
+;
+; ROI name: Blue Tarps
+; ROI rgb value: {0, 0, 255}
+; ROI npts: 6828
+;  
+
+orthovnir069_ROI_NOT_Blue_Tarps.txt
+; ENVI Output of ROIs (5.5.1) [Tue Nov 05 11:56:48 2019]
+; Number of ROIs: 1
+; File Dimension: 4583 x 6796
+;
+; ROI name: Region #1
+; ROI rgb value: {255, 0, 0}
+; ROI npts: 295510
+; 
+
+orthovnir078_ROI_Blue_Tarps.txt
+; ENVI Output of ROIs (5.5.1) [Tue Nov 05 12:12:47 2019]
+; Number of ROIs: 1
+; File Dimension: 4753 x 6746
+;
+; ROI name: Region #1
+; ROI rgb value: {255, 0, 0}
+; ROI npts: 3206
+; 
+
+orthovnir078_ROI_NON_Blue_Tarps.txt
+; ENVI Output of ROIs (5.5.1) [Tue Nov 05 12:14:00 2019]
+; Number of ROIs: 1
+; File Dimension: 4753 x 6746
+;
+; ROI name: Region #2
+; ROI rgb value: {0, 255, 0}
+; ROI npts: 409698
+; 
