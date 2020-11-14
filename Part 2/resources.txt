@@ -15,3 +15,43 @@ featurePlot(x = df[,2:4],
             scales = list(y = list(relation = "free"),
                           x = list(rot = 90)))
 ``` 
+
+```{r SVM Linear,  results="hold"}
+#pass
+fitControl <- trainControl(method = "cv",
+                           number = 10,
+                           returnResamp = 'all',
+                           savePredictions = 'final',
+                           classProbs = TRUE)
+
+set.seed(4)
+svm.linear.fit <- train(Blue_Tarp_or_Not~Red+Green+Blue,
+                    data = df_subset, #df_factor ,,
+                    preProcess=c("center","scale"),
+                    method="svmLinear",
+                    trControl= fitControl,
+                    tuneLength=3
+                    )
+
+svm.linear.fit
+```
+
+```{r SVM Poly, eval=FALSE,  results="hold"}
+#pass
+fitControl <- trainControl(method = "cv",
+                           number = 10,
+                           returnResamp = 'all',
+                           savePredictions = 'final',
+                           classProbs = TRUE)
+
+set.seed(4)
+svm.poly.fit <- train(Blue_Tarp_or_Not~Red+Green+Blue,
+                    data = df_subset, #df_factor,,
+                    preProcess=c("center","scale"),
+                    method="svmPoly",
+                    trControl= fitControl,
+                    tuneLength=3
+                    )
+
+svm.poly.fit
+```

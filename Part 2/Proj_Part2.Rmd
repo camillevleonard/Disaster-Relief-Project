@@ -32,7 +32,15 @@ Displaced persons were known to be making make-shift shelters out of blue tarps.
 As the final project for SYS 6018 - Data Mining, we were assigned to build models from the different techniques we learned in the course to, as accurately as possible, and in as timely a manner as possible, locate as many of the displaced persons identified in the imagery data so that they could be provided food and water before their situations became unsurvivable.  The data made available to students consisted of a csv of red, green, blue pixel values and a class indicator which indicated if a pixel was representative of a blue tarp or something else like vegetation. A final hold-out data set  presented in the format of multiple text files was provided as well. 
 
 # Project Budget
-The US Government spent [$1.5B on Haiti disaster relief](https://www.rand.org/pubs/research_reports/RR304.html) by the end of 2010.  
+
+The US Government spent [$1.5B on Haiti disaster relief](https://www.rand.org/pubs/research_reports/RR304.html) by the end of 2010. For this project, we will assume that 5 million dollars were allocated to our team to deliver supplies to displaced individuals in the immediate aftermath. Our team has been assigned an area where 8,000 displaced people are expected to be. Anything less than a 85% delivery success rate will be considered a disaster relief failure. 85% of 8,000 people is 6,800.    
+
+|                  |          |
+|:----------------|:--------:|
+|Budget           |$5,000,000|
+|Cost per Delivery (True Positive)| 
+|Cost per Mis-Delivery (False Positive)| 
+
  
 * method of delivery
 * cost of resources
@@ -504,7 +512,7 @@ knn.fit$resample #point est +/- std from 10 folds "variation in the third decima
 knn.sd <- sd(knn.fit[["resample"]][["Accuracy"]]*100)
 
 ```
-The average accuracy across ten folds is `r round(acc_knn, 2)` with a standard deviation of `r round(knn.sd, 3)`.  
+The average accuracy across ten folds when k = `r k_knn` is `r round(acc_knn, 2)` with a standard deviation of `r round(knn.sd, 3)`.  
 
 
 ## Random Forest {.tabset }
@@ -576,6 +584,7 @@ sens_RF <-  cm.RF_thresh[["byClass"]][["Sensitivity"]]*100
 spec_RF <- cm.RF_thresh[["byClass"]][["Specificity"]]*100
 FDR_RF <- ((cm.RF_thresh[["table"]][2,1])/(cm.RF_thresh[["table"]][2,1]+cm.RF_thresh[["table"]][2,2]))*100
 prec_RF <- cm.RF_thresh[["byClass"]][["Precision"]]*100
+mtry_best <- rf.fit[["bestTune"]][["mtry"]]
 ```
 ### Sampling Variability 
 
@@ -585,7 +594,7 @@ rf.fit$resample #point est +/- std from 10 folds "variation in the third decimal
 rf.sd <- sd(rf.fit[["resample"]][["Accuracy"]]*100)
 
 ```
-The average accuracy across ten folds is `r round(acc_RF, 2)` with a standard deviation of `r round(rf.sd, 3)`.  
+The average accuracy across ten folds when mtry = `r mtry_best`  is `r round(acc_RF, 2)` with a standard deviation of `r round(rf.sd, 3)`.  
 
 ## SVM {.tabset }
 
@@ -605,7 +614,9 @@ svm.radial.fit <- train(Blue_Tarp_or_Not~Red+Green+Blue,
                     preProcess=c("center","scale"),
                     method="svmRadial",
                     trControl= fitControl,
-                    tuneLength=3
+                    tuneLength=10
+                    #tuneGrid = expand.grid(C=seq(0,10, length=10),
+                    #                           sigma =seq(0,10, length=10))
                     )
 
 svm.radial.fit
@@ -613,47 +624,7 @@ svm.radial.fit
 summary(svm.radial.fit)
  
 ```
-
-
-```{r SVM Linear, eval=FALSE,  results="hold"}
-#pass
-fitControl <- trainControl(method = "cv",
-                           number = 10,
-                           returnResamp = 'all',
-                           savePredictions = 'final',
-                           classProbs = TRUE)
-
-set.seed(4)
-svm.linear.fit <- train(Blue_Tarp_or_Not~Red+Green+Blue,
-                    data = df_subset, #df_factor ,,
-                    preProcess=c("center","scale"),
-                    method="svmLinear",
-                    trControl= fitControl,
-                    tuneLength=3
-                    )
-
-svm.linear.fit
-```
-
-```{r SVM Poly, eval=FALSE,  results="hold"}
-#pass
-fitControl <- trainControl(method = "cv",
-                           number = 10,
-                           returnResamp = 'all',
-                           savePredictions = 'final',
-                           classProbs = TRUE)
-
-set.seed(4)
-svm.poly.fit <- train(Blue_Tarp_or_Not~Red+Green+Blue,
-                    data = df_subset, #df_factor,,
-                    preProcess=c("center","scale"),
-                    method="svmPoly",
-                    trControl= fitControl,
-                    tuneLength=3
-                    )
-
-svm.poly.fit
-```
+Both linear and poly SVM functions were considered. Radial SVM produced the highest accuracy values of the three methods. SVM radial was chosen for building the SVM model. 
 
 ### ROC 
 
@@ -697,6 +668,8 @@ sens_SVM <-  cm.SVM_thresh[["byClass"]][["Sensitivity"]]*100
 spec_SVM <- cm.SVM_thresh[["byClass"]][["Specificity"]]*100
 FDR_SVM <- ((cm.SVM_thresh[["table"]][2,1])/(cm.SVM_thresh[["table"]][2,1]+cm.SVM_thresh[["table"]][2,2]))*100
 prec_SVM <- cm.SVM_thresh[["byClass"]][["Precision"]]*100
+#sigma_best <-   fill this in after best svm model chosen 
+#C_best <- 
 ```
 ### Sampling Variability 
 
@@ -707,9 +680,6 @@ svm.sd <- sd(svm.radial.fit[["resample"]][["Accuracy"]]*100)
 
 ```
 The average accuracy across ten folds is `r round(acc_SVM, 2)` with a standard deviation of `r round(svm.sd, 3)`.  
-
-
-The final values used for the model were degree = 3, scale = 0.1 and C = 1.
 
 ## K-Folds Out of Sampling Performance 
 
