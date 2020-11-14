@@ -1,4 +1,17 @@
 https://www.npr.org/sections/pictureshow/2020/01/12/794939899/haiti-in-ruins-a-look-back-at-the-2010-earthquake
 https://www.rit.edu/news/rit-captures-haiti-disaster-high-tech-imaging-system
 Cecchine, Gary, Forrest E. Morgan, Michael A. Wermuth, Timothy Jackson, Agnes Gereben Schaefer, and Matthew Stafford, The U.S. Military Response to the 2010 Haiti Earthquake: Considerations for Army Leaders. Santa Monica, CA: RAND Corporation, 2013. https://www.rand.org/pubs/research_reports/RR304.html. Also available in print form.
-https://www.rand.org/pubs/research_reports/RR304.html (for the above) 
+https://www.rand.org/pubs/research_reports/RR304.html (for the above)
+
+
+### Boxplots
+
+```{r 3}
+#take a look at the distribution of classes and RBG values 
+featurePlot(x = df[,2:4],
+            y = df$Class,
+            plot = "box",
+            layout = c(3,1), 
+            scales = list(y = list(relation = "free"),
+                          x = list(rot = 90)))
+``` 

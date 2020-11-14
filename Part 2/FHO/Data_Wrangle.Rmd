@@ -69,6 +69,6 @@ head(df_final)
 #summary(df_final)
 ```
 ```{r}
-write.csv(df_final[,c(7:9)], file="SYS6018_FHO_Data.csv", row.names = FALSE) #Reference: https://datatofish.com/export-dataframe-to-csv-in-r/ 
+write.csv(df_final[,c(7:10)], file="SYS6018_FHO_Data.csv", row.names = FALSE) #Reference: https://datatofish.com/export-dataframe-to-csv-in-r/ 
 ```
 
