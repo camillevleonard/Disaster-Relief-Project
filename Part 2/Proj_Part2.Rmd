@@ -183,6 +183,7 @@ After the class label is converted into a binary classifier, it is easier to see
 
 
 ```{r Data Subset for Quick Runs}
+set.seed(4)
 #In order to make run times faster when tuning parameters subset data with 20%
 trainIndex <- createDataPartition(df_factor$Blue_Tarp_or_Not, p=0.2,
                                   list=FALSE,
@@ -227,7 +228,7 @@ Test model performance on Train data to select threshold values...
 #pass
 glm.prob <- predict(glm.fit, newdata=df_subset , type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
 par(pty="s")
-glm_roc <- roc(df_subset $Blue_Tarp_or_Not, glm.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="GLM ROC Curve") 
+glm_roc <- roc(df_subset $Blue_Tarp_or_Not, glm.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="Log. Reg. ROC Curve") 
 ```
 
 ### Thresholds
@@ -271,7 +272,7 @@ prec_LR <- cm.glm_thresh[["byClass"]][["Precision"]]*100
 "10 Fold Results"
 glm.fit$resample #point est +/- std from 10 folds "variation in the third decimal place"... 
 glm.sd <- sd(glm.fit[["resample"]][["Accuracy"]]*100)
-
+#plot(glm.fit[["resample"]][["Accuracy"]], main="Accuracy per Fold", xlab= "Fold Number", ylab="Accuracy")
 ```
 The average accuracy across ten folds is `r round(acc_LR, 2)` with a standard deviation of `r round(glm.sd, 3)`.  
 
@@ -296,8 +297,6 @@ lda.fit <- caret::train(Blue_Tarp_or_Not~Red+Green+Blue,
                     trControl= fitControl)
 
 lda.fit
-"Summary"
-summary(lda.fit)
 ```
 
 ### ROC 
@@ -336,7 +335,7 @@ cm.lda_thresh
 
 acc_lda <- cm.lda_thresh[["overall"]][["Accuracy"]]*100
 auc_lda <- lda_roc[["auc"]]
-thresh_lda <- lr.thresh
+thresh_lda <- lda.thresh
 sens_lda <-  cm.lda_thresh[["byClass"]][["Sensitivity"]]*100
 spec_lda <- cm.lda_thresh[["byClass"]][["Specificity"]]*100
 FDR_lda <- ((cm.lda_thresh[["table"]][2,1])/(cm.lda_thresh[["table"]][2,1]+cm.lda_thresh[["table"]][2,2]))*100
@@ -373,9 +372,6 @@ qda.fit <- caret::train(Blue_Tarp_or_Not~Red+Green+Blue,
                     trControl= fitControl)
 
 qda.fit
-"Summary"
-summary(qda.fit)
-
 ```
 
 ### ROC 
@@ -414,7 +410,7 @@ cm.qda_thresh
 
 acc_qda <- cm.qda_thresh[["overall"]][["Accuracy"]]*100
 auc_qda <- qda_roc[["auc"]]
-thresh_qda <- lr.thresh
+thresh_qda <- qda.thresh
 sens_qda <-  cm.qda_thresh[["byClass"]][["Sensitivity"]]*100
 spec_qda <- cm.qda_thresh[["byClass"]][["Specificity"]]*100
 FDR_qda <- ((cm.qda_thresh[["table"]][2,1])/(cm.qda_thresh[["table"]][2,1]+cm.qda_thresh[["table"]][2,2]))*100
@@ -449,14 +445,17 @@ knn.fit <- train(Blue_Tarp_or_Not~Red+Green+Blue,
                     preProcess=c("center","scale"),
                     method="knn",
                     trControl= fitControl,
-                    tuneLength=5
+                    tuneLength=10
                     )
 
 knn.fit
-"Summary"
-summary(knn.fit)
 
 ```
+
+```{r}
+plot(knn.fit)
+```
+
 
 ### ROC
 
@@ -497,7 +496,7 @@ cm.knn_thresh
 
 acc_knn <- cm.knn_thresh[["overall"]][["Accuracy"]]*100
 auc_knn <- knn_roc[["auc"]]
-thresh_knn <- lr.thresh
+thresh_knn <- knn.thresh
 sens_knn <-  cm.knn_thresh[["byClass"]][["Sensitivity"]]*100
 spec_knn <- cm.knn_thresh[["byClass"]][["Specificity"]]*100
 FDR_knn <- ((cm.knn_thresh[["table"]][2,1])/(cm.knn_thresh[["table"]][2,1]+cm.knn_thresh[["table"]][2,2]))*100
@@ -537,9 +536,11 @@ rf.fit <- train(Blue_Tarp_or_Not~Red+Green+Blue,
                     )
 
 rf.fit
-"Summary"
-summary(rf.fit)
 
+```
+
+```{r}
+plot(rf.fit)
 ```
 
 ### ROC 
@@ -579,7 +580,7 @@ cm.RF_thresh
 
 acc_RF <- cm.RF_thresh[["overall"]][["Accuracy"]]*100
 auc_RF <- RF_roc[["auc"]]
-thresh_RF <- lr.thresh
+thresh_RF <- RF.thresh
 sens_RF <-  cm.RF_thresh[["byClass"]][["Sensitivity"]]*100
 spec_RF <- cm.RF_thresh[["byClass"]][["Specificity"]]*100
 FDR_RF <- ((cm.RF_thresh[["table"]][2,1])/(cm.RF_thresh[["table"]][2,1]+cm.RF_thresh[["table"]][2,2]))*100
@@ -622,8 +623,16 @@ svm.radial.fit <- train(Blue_Tarp_or_Not~Red+Green+Blue,
 svm.radial.fit
 "Summary"
 summary(svm.radial.fit)
+
  
 ```
+
+```{r}
+plot(svm.radial.fit)
+
+```
+
+
 Both linear and poly SVM functions were considered. Radial SVM produced the highest accuracy values of the three methods. SVM radial was chosen for building the SVM model. 
 
 ### ROC 
@@ -663,7 +672,7 @@ cm.SVM_thresh
 
 acc_SVM <- cm.SVM_thresh[["overall"]][["Accuracy"]]*100
 auc_SVM <- SVM_roc[["auc"]]
-thresh_SVM <- lr.thresh
+thresh_SVM <- SVM.thresh
 sens_SVM <-  cm.SVM_thresh[["byClass"]][["Sensitivity"]]*100
 spec_SVM <- cm.SVM_thresh[["byClass"]][["Specificity"]]*100
 FDR_SVM <- ((cm.SVM_thresh[["table"]][2,1])/(cm.SVM_thresh[["table"]][2,1]+cm.SVM_thresh[["table"]][2,2]))*100
@@ -686,7 +695,7 @@ The average accuracy across ten folds is `r round(acc_SVM, 2)` with a standard d
 ### Table 2 - Performance Metrics: 10-Fold Cross-Validation Metrics 
 
 
-|      Method | KNN (k = `r k_knn`) |    LDA    |    QDA    | Log. Regression | Random Forest (tuning param = ?) | SVM (tuning param = ?)|
+|      Method | KNN (k = `r k_knn`) |    LDA    |    QDA    | Log. Regression | Random Forest (mtry = , nTrees =  ) | SVM (sigma = , C =)|
 |------------:|:--------------:|:---------:|:---------:|:---------------:|:----------------:|:----------------:|
 |    Accuracy | `r round(acc_knn,2)`%   | `r round(acc_lda,2)`%   | `r round(acc_qda,2)`%   | `r round(acc_LR,2)`%  | `r round(acc_RF,2)`| `r round(acc_SVM,2)`   |
 |         AUC | `r round(auc_knn,2)`%   | `r round(auc_lda,2)`%   | `r round(auc_qda,2)`%   | `r round(auc_LR,2)`%  | `r round(auc_RF,2)`| `r round(auc_SVM,2)`   |
@@ -697,19 +706,130 @@ The average accuracy across ten folds is `r round(acc_SVM, 2)` with a standard d
 |         FDR | `r round(FDR_knn,2)`%   | `r round(FDR_lda,2)`%   | `r round(FDR_qda,2)`%   | `r round(FDR_LR,2)`%  | `r round(FDR_RF,2)`|`r round(FDR_SVM,2)`    |
 |   Precision | `r round(prec_knn,2)`%  | `r round(prec_lda,2)`%  | `r round(prec_qda,2)`%  | `r round(prec_LR,2)`% |`r round(prec_RF,2)`| `r round(prec_SVM,2)`  |
 
-## Model Performance 
 
 ```{r, echo=FALSE}
 parallel::stopCluster(cl)
 ```
 
-### Discussion 
-
-(discussion on FHO data why we do this... what the benefits are... potential pitfalls)
-
-(discussion somewhere about ROC curves AUC and... other metrics)
 
 ## Hold-Out Test Sample Performance 
+
+```{r}
+df_FHO <- tibble(read.csv("SYS6018_FHO_Data.csv"))
+df_FHO
+```
+
+
+### Logistic Regression 
+
+```{r FHO LR, results="hold"}
+glm.prob_FHO <- predict(glm.fit, newdata=df_FHO , type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
+
+lr.thresh_FHO <- lr.thresh
+glm.pred_thresh_FHO <- factor(ifelse(glm.prob_FHO[,2]>lr.thresh_FHO,"BT", "NBT"), levels=c("NBT", "BT"))
+cm.glm_thresh_FHO <- confusionMatrix(factor(glm.pred_thresh_FHO),df_FHO$Blue_Tarp_or_Not, positive = "BT") 
+"Threshold: 0.5"
+cm.glm_thresh_FHO
+
+acc_LR_FHO <- round(cm.glm_thresh_FHO[["overall"]][["Accuracy"]]*100, 2)
+auc_LR_FHO <- round(glm_roc_FHO[["auc"]], 2)
+thresh_LR_FHO <- lr.thresh_FHO
+sens_LR_FHO <-  round(cm.glm_thresh_FHO[["byClass"]][["Sensitivity"]]*100, 2)
+spec_LR_FHO <- round(cm.glm_thresh_FHO[["byClass"]][["Specificity"]]*100, 2)
+FDR_LR_FHO <- round(((cm.glm_thresh_FHO[["table"]][2,1])/(cm.glm_thresh_FHO[["table"]][2,1]+cm.glm_thresh_FHO[["table"]][2,2]))*100, 2)
+prec_LR_FHO <- round(cm.glm_thresh_FHO[["byClass"]][["Precision"]]*100, 2)
+
+```
+
+### LDA 
+
+```{r FHO LDA, results="hold"}
+lda.prob_FHO <- predict(lda.fit, newdata=df_FHO, type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
+
+lda.thresh_FHO <- lda.thresh
+lda.pred_thresh_FHO <- factor(ifelse(lda.prob_FHO[,2]>lda.thresh_FHO,"BT", "NBT"), levels=c("NBT", "BT"))
+cm.lda_thresh_FHO <- confusionMatrix(factor(lda.pred_thresh_FHO),df_FHO$Blue_Tarp_or_Not, positive = "BT") 
+"Threshold: 0.5"
+cm.lda_thresh_FHO
+
+acc_lda_FHO <- round(cm.lda_thresh_FHO[["overall"]][["Accuracy"]]*100, 2)
+auc_lda_FHO <- round(lda_roc_FHO[["auc"]],2)
+thresh_lda_FHO <- lda.thresh_FHO
+sens_lda_FHO <-  round(cm.lda_thresh_FHO[["byClass"]][["Sensitivity"]]*100,2)
+spec_lda_FHO <- round(cm.lda_thresh_FHO[["byClass"]][["Specificity"]]*100,2)
+FDR_lda_FHO <- round(((cm.lda_thresh_FHO[["table"]][2,1])/(cm.lda_thresh_FHO[["table"]][2,1]+cm.lda_thresh_FHO[["table"]][2,2]))*100,2)
+prec_lda <- round(cm.lda_thresh_FHO[["byClass"]][["Precision"]]*100, 2)
+```
+
+
+### QDA 
+
+```{r FHO qDA, results="hold"}
+qda.prob_FHO <- predict(qda.fit, newdata=df_FHO , type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
+
+qda.thresh_FHO <- 0.5
+qda.pred_thresh <- factor(ifelse(qda.prob[,2]>qda.thresh,"BT", "NBT"), levels=c("NBT", "BT"))
+cm.qda_thresh <- confusionMatrix(factor(qda.pred_thresh),df_subset $Blue_Tarp_or_Not, positive = "BT") 
+"Threshold: 0.5"
+cm.qda_thresh
+
+acc_qda <- round(cm.qda_thresh[["overall"]][["Accuracy"]]*100,2)
+auc_qda <- round(qda_roc[["auc"]],2)
+thresh_qda <- qda.thresh_FHO
+sens_qda <-  round(cm.qda_thresh[["byClass"]][["Sensitivity"]]*100,2)
+spec_qda <- round(cm.qda_thresh[["byClass"]][["Specificity"]]*100,2)
+FDR_qda <- round(((cm.qda_thresh[["table"]][2,1])/(cm.qda_thresh[["table"]][2,1]+cm.qda_thresh[["table"]][2,2]))*100,2)
+prec_qda <- round(cm.qda_thresh[["byClass"]][["Precision"]]*100,2)
+```
+
+### KNN
+
+```{r FHO KNN, results="hold"}
+knn.prob_FHO <- predict(knn.fit, newdata=df_FHO , type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
+
+knn.thresh_FHO <- knn.thresh
+knn.pred_thresh_FHO <- factor(ifelse(knn.prob_FHO[,2]>knn.thresh_FHO,"BT", "NBT"), levels=c("NBT", "BT"))
+cm.knn_thresh_FHO <- confusionMatrix(factor(knn.pred_thresh_FHO),df_FHO$Blue_Tarp_or_Not, positive = "BT") 
+"Threshold:" 
+cm.knn_thresh_FHO
+
+acc_knn_FHO <- round(cm.knn_thresh_FHO[["overall"]][["Accuracy"]]*100,2)
+auc_knn_FHO <- round(knn_roc_FHO[["auc"]],2)
+thresh_knn_FHO <- knn.thresh_FHO
+sens_knn_FHO <-  round(cm.knn_thresh_FHO[["byClass"]][["Sensitivity"]]*100,2)
+spec_knn_FHO <- round(cm.knn_thresh_FHO[["byClass"]][["Specificity"]]*100,2)
+FDR_knn_FHO <- round(((cm.knn_thresh_FHO[["table"]][2,1])/(cm.knn_thresh_FHO[["table"]][2,1]+cm.knn_thresh_FHO[["table"]][2,2]))*100,2)
+prec_knn_FHO <- round(cm.knn_thresh_FHO[["byClass"]][["Precision"]]*100,2)
+k_knn_FHO <- knn.fit[["bestTune"]][["k"]]
+```
+
+### RF 
+
+```{r FHO RF, results="hold"}
+RF.prob <- predict(rf.fit, newdata=df_subset , type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
+
+RF.thresh <- 0.5
+RF.pred_thresh <- factor(ifelse(RF.prob[,2]>RF.thresh,"BT", "NBT"), levels=c("NBT", "BT"))
+cm.RF_thresh <- confusionMatrix(factor(RF.pred_thresh),df_subset $Blue_Tarp_or_Not, positive = "BT") 
+"Threshold: 0.5"
+cm.RF_thresh
+
+acc_RF <- cm.RF_thresh[["overall"]][["Accuracy"]]*100
+auc_RF <- RF_roc[["auc"]]
+thresh_RF <- RF.thresh
+sens_RF <-  cm.RF_thresh[["byClass"]][["Sensitivity"]]*100
+spec_RF <- cm.RF_thresh[["byClass"]][["Specificity"]]*100
+FDR_RF <- ((cm.RF_thresh[["table"]][2,1])/(cm.RF_thresh[["table"]][2,1]+cm.RF_thresh[["table"]][2,2]))*100
+prec_RF <- cm.RF_thresh[["byClass"]][["Precision"]]*100
+mtry_best <- rf.fit[["bestTune"]][["mtry"]]
+```
+
+### SVM 
+
+```{r FHO SVM, results="hold"}
+
+```
+
 
 ### Table 3 - Performance Metrics: Hold-Out Test Data Set Scores  
 
@@ -726,6 +846,15 @@ parallel::stopCluster(cl)
 #|            Precision=PPV | `r prec_knn_FHO`%  | `r prec_lda_FHO`%  | `r prec_qda_FHO`%  | `r prec_LR_FHO`%  |`r prec_RF_FHO`    | `r prec_SVM_FHO`  |
 ```
 
+## Model Performance 
+
+### Discussion 
+
+(discussion on FHO data why we do this... what the benefits are... potential pitfalls)
+
+(discussion somewhere about ROC curves AUC and... other metrics)
+
+handling imbalanced classes 
 
 ## Future Work 
 
