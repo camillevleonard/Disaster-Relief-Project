@@ -892,7 +892,7 @@ parallel::stopCluster(cl)
 |            Precision=PPV | `r prec_knn_FHO`%  | `r prec_lda_FHO`%  | `r prec_qda_FHO`%  | `r prec_LR_FHO`%  |`r prec_RF_FHO`%    | `r prec_SVM_FHO`%  |
 |                    Cost  |
 
-Using the performance results for each model on the final hold out data set, the predicted cost ... 
+Using the performance results for each model on the final hold out data set, the predicted cost ...  
 
 
 # Discussion 
