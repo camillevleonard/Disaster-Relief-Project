@@ -1,7 +1,7 @@
 ---
 title: "SYS 6018 Semester Project Part 2"
 author: "Camille Leonard"
-date: "10/31/2020"
+date: "11/22/2020"
 output: 
   html_document:
     theme: spacelab 
@@ -16,6 +16,8 @@ output:
     
     
 ---
+
+
 
 # Project Introduction 
 
@@ -46,7 +48,7 @@ The US Government spent [$1.5B on Haiti disaster relief](https://www.rand.org/pu
 * cost of resources
 * time from disaster to unsurvivable conditions 
 
-# Analysis Methods 
+# Data Exploration   
 
 ```{r, echo=FALSE, message=FALSE}
 knitr::opts_chunk$set(error=TRUE,        # Keep compiling upon error
@@ -73,6 +75,11 @@ library(ROCR)
 library(randomForest)
 library(e1071)
 library(plotly)
+library(tictoc)
+```
+
+```{r }
+tic("Knit Time")
 ```
 
 ```{r cores, echo=FALSE, message=FALSE, results='hide'}
@@ -96,7 +103,7 @@ library(tune)
 grid_control <- control_grid(verbose = TRUE,pkgs = "doParallel",allow_par = TRUE)
 ```
 
-## EDA {.tabset }
+## {.tabset }
 
 The data provided for analysis was generated from overhead images and stored as a three channel output. Each pixel also had a classifier label indicating whether it was a blue tarp or something else like vegetation or soil. The channels represented the red, green, and blue values for pixels within images. RGB color model is referred to as an additive model. The integer value for the red, green, and blue channels are combined to represent a color. Typically, the component values are stored as an 8 bit integer ranging from 0 to 255. 
 
@@ -182,7 +189,7 @@ fig1
 After the class label is converted into a binary classifier, it is easier to see separation between the data points for blue tarps and not blue tarps. 
 
 
-```{r Data Subset for Quick Runs}
+```{r Data Subset for Quick Runs, eval=FALSE, echo=FALSE}
 set.seed(4)
 #In order to make run times faster when tuning parameters subset data with 20%
 trainIndex <- createDataPartition(df_factor$Blue_Tarp_or_Not, p=0.2,
@@ -192,10 +199,11 @@ df_subset <- df_factor[trainIndex,]
 ```
 
 
+# Model Fitting
 
 ## Logistic Regression {.tabset }
-Fit a Logistic Regression Model 
-!!!Need to turn on the fold result saving ... 
+
+Fit a Logistic Regression Model ....
 
 ### Model 
 
@@ -208,12 +216,13 @@ fitControl <- trainControl(method = "cv",
                            classProbs = TRUE) 
 
 set.seed(4)
+tic("Log. Reg.")
 glm.fit <- caret::train(Blue_Tarp_or_Not~Red+Green+Blue,
-                    data = df_subset, #df_factor,
+                    data = df_factor,
                     method="glm",
                     family="binomial",
                     trControl= fitControl)
-
+glm.time <- toc(quiet = TRUE)
 glm.fit
 
 "Summary"
@@ -226,15 +235,15 @@ summary(glm.fit)
 Test model performance on Train data to select threshold values... 
 ```{r Log Reg pred,  results="hold"}
 #pass
-glm.prob <- predict(glm.fit, newdata=df_subset , type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
+glm.prob <- predict(glm.fit, newdata=df_factor , type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
 par(pty="s")
-glm_roc <- roc(df_subset $Blue_Tarp_or_Not, glm.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="Log. Reg. ROC Curve") 
+glm_roc <- roc(df_factor $Blue_Tarp_or_Not, glm.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="Log. Reg. ROC Curve") 
 ```
 
 ### Thresholds
 
 ```{r LR Thresholds,  results="hold"}
-roc.info_glm <- roc(df_subset$Blue_Tarp_or_Not, glm.prob[,2], legacy.axes=TRUE)
+roc.info_glm <- roc(df_factor$Blue_Tarp_or_Not, glm.prob[,2], legacy.axes=TRUE)
 roc.glm.df <- data.frame(tpp=roc.info_glm$sensitivities*100, fpp=(1-roc.info_glm$specificities)*100, thresholds=roc.info_glm$thresholds)
 #roc.glm.df[roc.glm.df>98.5 & roc.glm.df < 99,]
 
@@ -254,7 +263,7 @@ fig2
 ```{r Log Reg Confusion Matrix,  results="hold"}
 lr.thresh <- 0.5
 glm.pred_thresh <- factor(ifelse(glm.prob[,2]>lr.thresh,"BT", "NBT"), levels=c("NBT", "BT"))
-cm.glm_thresh <- confusionMatrix(factor(glm.pred_thresh),df_subset $Blue_Tarp_or_Not, positive = "BT") 
+cm.glm_thresh <- confusionMatrix(factor(glm.pred_thresh),df_factor $Blue_Tarp_or_Not, positive = "BT") 
 "Threshold: 0.5"
 cm.glm_thresh
 
@@ -289,13 +298,14 @@ fitControl <- trainControl(method = "cv",
                            classProbs = TRUE)
 
 set.seed(4)
+tic("LDA")
 lda.fit <- caret::train(Blue_Tarp_or_Not~Red+Green+Blue,
-                    data = df_subset, #df_factor,,
+                    data = df_factor,
                     preProcess=c("center","scale"),
                     method="lda",
                     verbose= FALSE,
                     trControl= fitControl)
-
+lda.time <- toc(quiet = TRUE)
 lda.fit
 ```
 
@@ -303,15 +313,15 @@ lda.fit
 
 ```{r LDA pred,  results="hold"}
 #pass
-lda.prob <- predict(lda.fit, newdata=df_subset, type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
+lda.prob <- predict(lda.fit, newdata=df_factor, type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
 par(pty="s")
-lda_roc <- roc(df_subset$Blue_Tarp_or_Not, lda.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="LDA ROC Curve") 
+lda_roc <- roc(df_factor$Blue_Tarp_or_Not, lda.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="LDA ROC Curve") 
 ```
 
 ### Thresholds
 
 ```{r LDA Thresholds,  results="hold"}
-roc.info_lda <- roc(df_subset $Blue_Tarp_or_Not, lda.prob[,2], legacy.axes=TRUE)
+roc.info_lda <- roc(df_factor $Blue_Tarp_or_Not, lda.prob[,2], legacy.axes=TRUE)
 roc.lda.df <- data.frame(tpp=roc.info_lda$sensitivities*100, fpp=(1-roc.info_lda$specificities)*100, thresholds=roc.info_lda$thresholds)
 #roc.lda.df[roc.lda.df>91.5 & roc.lda.df < 91.6,]
 
@@ -329,7 +339,7 @@ fig3
 ```{r LDA Confusion Matrix,  results="hold"}
 lda.thresh <- 0.5
 lda.pred_thresh <- factor(ifelse(lda.prob[,2]>lda.thresh,"BT", "NBT"), levels=c("NBT", "BT"))
-cm.lda_thresh <- confusionMatrix(factor(lda.pred_thresh),df_subset$Blue_Tarp_or_Not, positive = "BT") 
+cm.lda_thresh <- confusionMatrix(factor(lda.pred_thresh),df_factor$Blue_Tarp_or_Not, positive = "BT") 
 "Threshold: 0.5"
 cm.lda_thresh
 
@@ -364,13 +374,14 @@ fitControl <- trainControl(method = "cv",
                            classProbs = TRUE)
 
 set.seed(4)
+tic("QDA")
 qda.fit <- caret::train(Blue_Tarp_or_Not~Red+Green+Blue,
-                    data = df_subset, #df_factor,,
+                    data = df_factor,
                     preProcess=c("center","scale"),
                     method="qda",
                     verbose= FALSE,
                     trControl= fitControl)
-
+qda.time <- toc(quiet = TRUE)
 qda.fit
 ```
 
@@ -378,15 +389,15 @@ qda.fit
 
 ```{r QDA pred,  results="hold"}
 #pass
-qda.prob <- predict(qda.fit, newdata=df_subset , type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
+qda.prob <- predict(qda.fit, newdata=df_factor , type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
 par(pty="s")
-qda_roc <- roc(df_subset $Blue_Tarp_or_Not, qda.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="QDA ROC Curve") 
+qda_roc <- roc(df_factor $Blue_Tarp_or_Not, qda.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="QDA ROC Curve") 
 ```
 
 ### Thresholds 
 
 ```{r QDA Thresholds,  results="hold"}
-roc.info_qda <- roc(df_subset$Blue_Tarp_or_Not, qda.prob[,2], legacy.axes=TRUE)
+roc.info_qda <- roc(df_factor$Blue_Tarp_or_Not, qda.prob[,2], legacy.axes=TRUE)
 roc.qda.df <- data.frame(tpp=roc.info_qda$sensitivities*100, fpp=(1-roc.info_qda$specificities)*100, thresholds=roc.info_qda$thresholds)
 #roc.qda.df[roc.qda.df>98 & roc.qda.df < 99,]
 
@@ -404,7 +415,7 @@ fig4
 ```{r QDA Confusion Matrix,  results="hold"}
 qda.thresh <- 0.5
 qda.pred_thresh <- factor(ifelse(qda.prob[,2]>qda.thresh,"BT", "NBT"), levels=c("NBT", "BT"))
-cm.qda_thresh <- confusionMatrix(factor(qda.pred_thresh),df_subset $Blue_Tarp_or_Not, positive = "BT") 
+cm.qda_thresh <- confusionMatrix(factor(qda.pred_thresh),df_factor $Blue_Tarp_or_Not, positive = "BT") 
 "Threshold: 0.5"
 cm.qda_thresh
 
@@ -440,14 +451,15 @@ fitControl <- trainControl(method = "cv",
                            classProbs = TRUE)
 
 set.seed(4)
+tic("KNN")
 knn.fit <- train(Blue_Tarp_or_Not~Red+Green+Blue,
-                    data = df_subset, #df_factor,,
+                    data = df_factor,
                     preProcess=c("center","scale"),
                     method="knn",
                     trControl= fitControl,
                     tuneLength=10
                     )
-
+knn.time <- toc(quiet = TRUE)
 knn.fit
 
 ```
@@ -461,9 +473,9 @@ plot(knn.fit)
 
 ```{r KNN pred,  results="hold"}
 #pass
-knn.prob <- predict(knn.fit, newdata=df_subset , type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
+knn.prob <- predict(knn.fit, newdata=df_factor , type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
 par(pty="s")
-knn_roc <- roc(df_subset $Blue_Tarp_or_Not, knn.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="KNN ROC Curve") 
+knn_roc <- roc(df_factor $Blue_Tarp_or_Not, knn.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="KNN ROC Curve") 
 ```
 
 ### Thresholds 
@@ -471,7 +483,7 @@ knn_roc <- roc(df_subset $Blue_Tarp_or_Not, knn.prob[,2], plot=TRUE, legacy.axes
 Not sure why there are only 10 values for this one...? 
 
 ```{r KNN Thresholds,  results="hold"}
-roc.info_knn <- roc(df_subset$Blue_Tarp_or_Not, knn.prob[,2], legacy.axes=TRUE)
+roc.info_knn <- roc(df_factor$Blue_Tarp_or_Not, knn.prob[,2], legacy.axes=TRUE)
 roc.knn.df <- data.frame(tpp=roc.info_knn$sensitivities*100, fpp=(1-roc.info_knn$specificities)*100, thresholds=roc.info_knn$thresholds)
 #roc.knn.df[roc.knn.df>99 & roc.knn.df < 100,]
 #roc.knn.df
@@ -490,7 +502,7 @@ fig5
 ```{r KNN Confusion Matrix,  results="hold"}
 knn.thresh <- 0.5
 knn.pred_thresh <- factor(ifelse(knn.prob[,2]>knn.thresh,"BT", "NBT"), levels=c("NBT", "BT"))
-cm.knn_thresh <- confusionMatrix(factor(knn.pred_thresh),df_subset $Blue_Tarp_or_Not, positive = "BT") 
+cm.knn_thresh <- confusionMatrix(factor(knn.pred_thresh),df_factor $Blue_Tarp_or_Not, positive = "BT") 
 "Threshold: 0.5"
 cm.knn_thresh
 
@@ -527,14 +539,15 @@ fitControl <- trainControl(method = "cv",
                            classProbs = TRUE)
 
 set.seed(4)
+tic("RF")
 rf.fit <- train(Blue_Tarp_or_Not~Red+Green+Blue,
-                    data = df_subset, #df_factor,,
+                    data = df_factor,
                     preProcess=c("center","scale"),
                     method="rf", #what is the difference between the different caret rf models??
                     trControl= fitControl,
                     tuneLength=3
                     )
-
+rf.time <- toc(quiet = TRUE)
 rf.fit
 
 ```
@@ -547,15 +560,15 @@ plot(rf.fit)
 
 ```{r RF pred,  results="hold"}
 #pass
-RF.prob <- predict(rf.fit, newdata=df_subset , type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
+RF.prob <- predict(rf.fit, newdata=df_factor , type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
 par(pty="s")
-RF_roc <- roc(df_subset $Blue_Tarp_or_Not, RF.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="RF ROC Curve") 
+RF_roc <- roc(df_factor $Blue_Tarp_or_Not, RF.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="RF ROC Curve") 
 ```
 
 ### Thresholds 
 
 ```{r RF Thresholds,  results="hold"}
-roc.info_rf <- roc(df_subset$Blue_Tarp_or_Not, RF.prob[,2], legacy.axes=TRUE)
+roc.info_rf <- roc(df_factor$Blue_Tarp_or_Not, RF.prob[,2], legacy.axes=TRUE)
 roc.rf.df <- data.frame(tpp=roc.info_rf$sensitivities*100, fpp=(1-roc.info_rf$specificities)*100, thresholds=roc.info_rf$thresholds)
 #roc.rf.df[roc.rf.df>99 & roc.rf.df < 100,]
 #roc.rf.df
@@ -574,7 +587,7 @@ fig6
 ```{r RF Confusion Matrix,  results="hold"}
 RF.thresh <- 0.5
 RF.pred_thresh <- factor(ifelse(RF.prob[,2]>RF.thresh,"BT", "NBT"), levels=c("NBT", "BT"))
-cm.RF_thresh <- confusionMatrix(factor(RF.pred_thresh),df_subset $Blue_Tarp_or_Not, positive = "BT") 
+cm.RF_thresh <- confusionMatrix(factor(RF.pred_thresh),df_factor $Blue_Tarp_or_Not, positive = "BT") 
 "Threshold: 0.5"
 cm.RF_thresh
 
@@ -586,6 +599,7 @@ spec_RF <- cm.RF_thresh[["byClass"]][["Specificity"]]*100
 FDR_RF <- ((cm.RF_thresh[["table"]][2,1])/(cm.RF_thresh[["table"]][2,1]+cm.RF_thresh[["table"]][2,2]))*100
 prec_RF <- cm.RF_thresh[["byClass"]][["Precision"]]*100
 mtry_best <- rf.fit[["bestTune"]][["mtry"]]
+ntree <- rf.fit[["finalModel"]][["ntree"]]
 ```
 ### Sampling Variability 
 
@@ -610,8 +624,9 @@ fitControl <- trainControl(method = "cv",
                            classProbs = TRUE)
 
 set.seed(4)
+tic("SVM")
 svm.radial.fit <- train(Blue_Tarp_or_Not~Red+Green+Blue,
-                    data = df_subset, #df_factor,,
+                    data = df_factor,
                     preProcess=c("center","scale"),
                     method="svmRadial",
                     trControl= fitControl,
@@ -619,7 +634,7 @@ svm.radial.fit <- train(Blue_Tarp_or_Not~Red+Green+Blue,
                     #tuneGrid = expand.grid(C=seq(0,10, length=10),
                     #                           sigma =seq(0,10, length=10))
                     )
-
+svm.time <- toc(quiet = TRUE)
 svm.radial.fit
 "Summary"
 summary(svm.radial.fit)
@@ -639,15 +654,15 @@ Both linear and poly SVM functions were considered. Radial SVM produced the high
 
 ```{r SVM pred,  results="hold"}
 #pass
-SVM.prob <- predict(svm.radial.fit, newdata=df_subset , type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
+SVM.prob <- predict(svm.radial.fit, newdata=df_factor , type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
 par(pty="s")
-SVM_roc <- roc(df_subset $Blue_Tarp_or_Not, SVM.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="SVM ROC Curve") 
+SVM_roc <- roc(df_factor $Blue_Tarp_or_Not, SVM.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="SVM ROC Curve") 
 ```
 
 ### Thresholds
 
 ```{r SVM Thresholds,  results="hold"}
-roc.info_svm <- roc(df_subset$Blue_Tarp_or_Not, SVM.prob[,2], legacy.axes=TRUE)
+roc.info_svm <- roc(df_factor$Blue_Tarp_or_Not, SVM.prob[,2], legacy.axes=TRUE)
 roc.svm.df <- data.frame(tpp=roc.info_svm$sensitivities*100, fpp=(1-roc.info_svm$specificities)*100, thresholds=roc.info_svm$thresholds)
 #roc.svm.df[roc.svm.df>99 & roc.svm.df < 100,]
 #roc.svm.df
@@ -666,7 +681,7 @@ fig7
 ```{r SVM Confusion Matrix,  results="hold"}
 SVM.thresh <- 0.5
 SVM.pred_thresh <- factor(ifelse(SVM.prob[,2]>SVM.thresh,"BT", "NBT"), levels=c("NBT", "BT"))
-cm.SVM_thresh <- confusionMatrix(factor(SVM.pred_thresh),df_subset $Blue_Tarp_or_Not, positive = "BT") 
+cm.SVM_thresh <- confusionMatrix(factor(SVM.pred_thresh),df_factor $Blue_Tarp_or_Not, positive = "BT") 
 "Threshold: 0.5"
 cm.SVM_thresh
 
@@ -677,8 +692,8 @@ sens_SVM <-  cm.SVM_thresh[["byClass"]][["Sensitivity"]]*100
 spec_SVM <- cm.SVM_thresh[["byClass"]][["Specificity"]]*100
 FDR_SVM <- ((cm.SVM_thresh[["table"]][2,1])/(cm.SVM_thresh[["table"]][2,1]+cm.SVM_thresh[["table"]][2,2]))*100
 prec_SVM <- cm.SVM_thresh[["byClass"]][["Precision"]]*100
-#sigma_best <-   fill this in after best svm model chosen 
-#C_best <- 
+sigma_best <- round(svm.radial.fit[["bestTune"]][["sigma"]], 4)
+C_best <- svm.radial.fit[["bestTune"]][["C"]]
 ```
 ### Sampling Variability 
 
@@ -692,30 +707,31 @@ The average accuracy across ten folds is `r round(acc_SVM, 2)` with a standard d
 
 ## K-Folds Out of Sampling Performance 
 
-### Table 2 - Performance Metrics: 10-Fold Cross-Validation Metrics 
+### Table 2 - Performance Summary
 
 
-|      Method | KNN (k = `r k_knn`) |    LDA    |    QDA    | Log. Regression | Random Forest (mtry = , nTrees =  ) | SVM (sigma = , C =)|
-|------------:|:--------------:|:---------:|:---------:|:---------------:|:----------------:|:----------------:|
-|    Accuracy | `r round(acc_knn,2)`%   | `r round(acc_lda,2)`%   | `r round(acc_qda,2)`%   | `r round(acc_LR,2)`%  | `r round(acc_RF,2)`| `r round(acc_SVM,2)`   |
-|         AUC | `r round(auc_knn,2)`%   | `r round(auc_lda,2)`%   | `r round(auc_qda,2)`%   | `r round(auc_LR,2)`%  | `r round(auc_RF,2)`| `r round(auc_SVM,2)`   |
+#### **Performance Metrics: 10-Fold Cross-Validation Metrics**
+
+|      Method | KNN (k = `r k_knn`) |    LDA    |    QDA    | Log. Regression | Random Forest (mtry = `r mtry_best`, nTrees = `r ntree`) | SVM (sigma = `r sigma_best`, C = `r C_best`)|
+|------------:|:----------------:|:---------:|:---------:|:---------------:|:--------------:|:--------------:|
+|    Accuracy | `r round(acc_knn,2)`%   | `r round(acc_lda,2)`%   | `r round(acc_qda,2)`%   | `r round(acc_LR,2)`%  | `r round(acc_RF,2)`%| `r round(acc_SVM,2)`%   |
+|         AUC | `r round(auc_knn,2)`%   | `r round(auc_lda,2)`%   | `r round(auc_qda,2)`%   | `r round(auc_LR,2)`%  | `r round(auc_RF,2)`%| `r round(auc_SVM,2)`%   |
 |         ROC |                         |                         |                         |                       |                    |                        |
 |   Threshold | `r round(thresh_knn,2)` | `r round(thresh_lda,2)` | `r round(thresh_qda,2)` | `r round(thresh_LR,2)`| `r round(thresh_RF,2)`|`r round(thresh_SVM,2)`|
-| Sensitivity | `r round(sens_knn,2)`%  | `r round(sens_lda,2)`%  | `r round(sens_qda,2)`%  | `r round(sens_LR,2)`% |`r round(sens_RF,2)`| `r round(sens_SVM,2)`  |
-| Specificity | `r round(spec_knn,2)`%  | `r round(spec_lda,2)`%  | `r round(spec_qda,2)`%  | `r round(spec_LR,2)`% |`r round(spec_RF,2)`|`r round(spec_SVM,2)`   |
-|         FDR | `r round(FDR_knn,2)`%   | `r round(FDR_lda,2)`%   | `r round(FDR_qda,2)`%   | `r round(FDR_LR,2)`%  | `r round(FDR_RF,2)`|`r round(FDR_SVM,2)`    |
-|   Precision | `r round(prec_knn,2)`%  | `r round(prec_lda,2)`%  | `r round(prec_qda,2)`%  | `r round(prec_LR,2)`% |`r round(prec_RF,2)`| `r round(prec_SVM,2)`  |
+| Sensitivity | `r round(sens_knn,2)`%  | `r round(sens_lda,2)`%  | `r round(sens_qda,2)`%  | `r round(sens_LR,2)`% |`r round(sens_RF,2)`%| `r round(sens_SVM,2)`%  |
+| Specificity | `r round(spec_knn,2)`%  | `r round(spec_lda,2)`%  | `r round(spec_qda,2)`%  | `r round(spec_LR,2)`% |`r round(spec_RF,2)`%|`r round(spec_SVM,2)`%   |
+|         FDR | `r round(FDR_knn,2)`%   | `r round(FDR_lda,2)`%   | `r round(FDR_qda,2)`%   | `r round(FDR_LR,2)`%  | `r round(FDR_RF,2)`%|`r round(FDR_SVM,2)`%    |
+|   Precision | `r round(prec_knn,2)`%  | `r round(prec_lda,2)`%  | `r round(prec_qda,2)`%  | `r round(prec_LR,2)`% |`r round(prec_RF,2)`%| `r round(prec_SVM,2)`%  |
 
+Model performance based on running training data through the fitted model. ~**Make some comments here about variation between folds**~ 
 
-```{r, echo=FALSE}
-parallel::stopCluster(cl)
-```
+# Model Performance 
 
+## Hold-Out Test Sample Performance {.tabset}
 
-## Hold-Out Test Sample Performance 
-
-```{r}
+```{r Load FHO Data}
 df_FHO <- tibble(read.csv("SYS6018_FHO_Data.csv"))
+df_FHO$Blue_Tarp_or_Not <- factor(df_FHO$Blue_Tarp_or_Not, labels = c("NBT", "BT"))
 df_FHO
 ```
 
@@ -723,16 +739,18 @@ df_FHO
 ### Logistic Regression 
 
 ```{r FHO LR, results="hold"}
+tic("Log.Reg. Predict")
 glm.prob_FHO <- predict(glm.fit, newdata=df_FHO , type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
+glm.predict.time <- toc(quiet = TRUE)
 
 lr.thresh_FHO <- lr.thresh
 glm.pred_thresh_FHO <- factor(ifelse(glm.prob_FHO[,2]>lr.thresh_FHO,"BT", "NBT"), levels=c("NBT", "BT"))
 cm.glm_thresh_FHO <- confusionMatrix(factor(glm.pred_thresh_FHO),df_FHO$Blue_Tarp_or_Not, positive = "BT") 
-"Threshold: 0.5"
+"Threshold:" 
 cm.glm_thresh_FHO
 
 acc_LR_FHO <- round(cm.glm_thresh_FHO[["overall"]][["Accuracy"]]*100, 2)
-auc_LR_FHO <- round(glm_roc_FHO[["auc"]], 2)
+auc_LR_FHO <- round(glm_roc[["auc"]], 2)
 thresh_LR_FHO <- lr.thresh_FHO
 sens_LR_FHO <-  round(cm.glm_thresh_FHO[["byClass"]][["Sensitivity"]]*100, 2)
 spec_LR_FHO <- round(cm.glm_thresh_FHO[["byClass"]][["Specificity"]]*100, 2)
@@ -744,48 +762,54 @@ prec_LR_FHO <- round(cm.glm_thresh_FHO[["byClass"]][["Precision"]]*100, 2)
 ### LDA 
 
 ```{r FHO LDA, results="hold"}
+tic("LDA Predict")
 lda.prob_FHO <- predict(lda.fit, newdata=df_FHO, type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
+lda.predict.time <- toc(quiet = TRUE)
 
 lda.thresh_FHO <- lda.thresh
 lda.pred_thresh_FHO <- factor(ifelse(lda.prob_FHO[,2]>lda.thresh_FHO,"BT", "NBT"), levels=c("NBT", "BT"))
 cm.lda_thresh_FHO <- confusionMatrix(factor(lda.pred_thresh_FHO),df_FHO$Blue_Tarp_or_Not, positive = "BT") 
-"Threshold: 0.5"
+"Threshold:" 
 cm.lda_thresh_FHO
 
 acc_lda_FHO <- round(cm.lda_thresh_FHO[["overall"]][["Accuracy"]]*100, 2)
-auc_lda_FHO <- round(lda_roc_FHO[["auc"]],2)
+auc_lda_FHO <- round(lda_roc[["auc"]],2)
 thresh_lda_FHO <- lda.thresh_FHO
 sens_lda_FHO <-  round(cm.lda_thresh_FHO[["byClass"]][["Sensitivity"]]*100,2)
 spec_lda_FHO <- round(cm.lda_thresh_FHO[["byClass"]][["Specificity"]]*100,2)
 FDR_lda_FHO <- round(((cm.lda_thresh_FHO[["table"]][2,1])/(cm.lda_thresh_FHO[["table"]][2,1]+cm.lda_thresh_FHO[["table"]][2,2]))*100,2)
-prec_lda <- round(cm.lda_thresh_FHO[["byClass"]][["Precision"]]*100, 2)
+prec_lda_FHO <- round(cm.lda_thresh_FHO[["byClass"]][["Precision"]]*100, 2)
 ```
 
 
 ### QDA 
 
 ```{r FHO qDA, results="hold"}
+tic("QDA Predict")
 qda.prob_FHO <- predict(qda.fit, newdata=df_FHO , type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
+qda.predict.time <- toc(quiet = TRUE)
 
-qda.thresh_FHO <- 0.5
-qda.pred_thresh <- factor(ifelse(qda.prob[,2]>qda.thresh,"BT", "NBT"), levels=c("NBT", "BT"))
-cm.qda_thresh <- confusionMatrix(factor(qda.pred_thresh),df_subset $Blue_Tarp_or_Not, positive = "BT") 
-"Threshold: 0.5"
-cm.qda_thresh
+qda.thresh_FHO <- qda.thresh
+qda.pred_thresh_FHO <- factor(ifelse(qda.prob_FHO[,2]>qda.thresh_FHO,"BT", "NBT"), levels=c("NBT", "BT"))
+cm.qda_thresh_FHO <- confusionMatrix(factor(qda.pred_thresh_FHO),df_FHO$Blue_Tarp_or_Not, positive = "BT") 
+"Threshold:" 
+cm.qda_thresh_FHO
 
-acc_qda <- round(cm.qda_thresh[["overall"]][["Accuracy"]]*100,2)
-auc_qda <- round(qda_roc[["auc"]],2)
-thresh_qda <- qda.thresh_FHO
-sens_qda <-  round(cm.qda_thresh[["byClass"]][["Sensitivity"]]*100,2)
-spec_qda <- round(cm.qda_thresh[["byClass"]][["Specificity"]]*100,2)
-FDR_qda <- round(((cm.qda_thresh[["table"]][2,1])/(cm.qda_thresh[["table"]][2,1]+cm.qda_thresh[["table"]][2,2]))*100,2)
-prec_qda <- round(cm.qda_thresh[["byClass"]][["Precision"]]*100,2)
+acc_qda_FHO <- round(cm.qda_thresh_FHO[["overall"]][["Accuracy"]]*100,2)
+auc_qda_FHO <- round(qda_roc[["auc"]],2)
+thresh_qda_FHO <- qda.thresh_FHO
+sens_qda_FHO <-  round(cm.qda_thresh_FHO[["byClass"]][["Sensitivity"]]*100,2)
+spec_qda_FHO <- round(cm.qda_thresh_FHO[["byClass"]][["Specificity"]]*100,2)
+FDR_qda_FHO <- round(((cm.qda_thresh_FHO[["table"]][2,1])/(cm.qda_thresh_FHO[["table"]][2,1]+cm.qda_thresh_FHO[["table"]][2,2]))*100,2)
+prec_qda_FHO <- round(cm.qda_thresh_FHO[["byClass"]][["Precision"]]*100,2)
 ```
 
 ### KNN
 
 ```{r FHO KNN, results="hold"}
+tic("KNN Predict")
 knn.prob_FHO <- predict(knn.fit, newdata=df_FHO , type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
+knn.predict.time <- toc(quiet = TRUE)
 
 knn.thresh_FHO <- knn.thresh
 knn.pred_thresh_FHO <- factor(ifelse(knn.prob_FHO[,2]>knn.thresh_FHO,"BT", "NBT"), levels=c("NBT", "BT"))
@@ -794,61 +818,140 @@ cm.knn_thresh_FHO <- confusionMatrix(factor(knn.pred_thresh_FHO),df_FHO$Blue_Tar
 cm.knn_thresh_FHO
 
 acc_knn_FHO <- round(cm.knn_thresh_FHO[["overall"]][["Accuracy"]]*100,2)
-auc_knn_FHO <- round(knn_roc_FHO[["auc"]],2)
+auc_knn_FHO <- round(knn_roc[["auc"]],2)
 thresh_knn_FHO <- knn.thresh_FHO
 sens_knn_FHO <-  round(cm.knn_thresh_FHO[["byClass"]][["Sensitivity"]]*100,2)
 spec_knn_FHO <- round(cm.knn_thresh_FHO[["byClass"]][["Specificity"]]*100,2)
 FDR_knn_FHO <- round(((cm.knn_thresh_FHO[["table"]][2,1])/(cm.knn_thresh_FHO[["table"]][2,1]+cm.knn_thresh_FHO[["table"]][2,2]))*100,2)
 prec_knn_FHO <- round(cm.knn_thresh_FHO[["byClass"]][["Precision"]]*100,2)
-k_knn_FHO <- knn.fit[["bestTune"]][["k"]]
 ```
 
 ### RF 
 
 ```{r FHO RF, results="hold"}
-RF.prob <- predict(rf.fit, newdata=df_subset , type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
+tic("RF Predict")
+RF.prob_FHO <- predict(rf.fit, newdata=df_FHO , type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
+rf.predict.time <- toc(quiet = TRUE)
 
-RF.thresh <- 0.5
-RF.pred_thresh <- factor(ifelse(RF.prob[,2]>RF.thresh,"BT", "NBT"), levels=c("NBT", "BT"))
-cm.RF_thresh <- confusionMatrix(factor(RF.pred_thresh),df_subset $Blue_Tarp_or_Not, positive = "BT") 
-"Threshold: 0.5"
-cm.RF_thresh
+RF.thresh_FHO <- RF.thresh
+RF.pred_thresh_FHO <- factor(ifelse(RF.prob_FHO[,2]>RF.thresh_FHO,"BT", "NBT"), levels=c("NBT", "BT"))
+cm.RF_thresh_FHO <- confusionMatrix(factor(RF.pred_thresh_FHO),df_FHO$Blue_Tarp_or_Not, positive = "BT") 
+"Threshold:"
+cm.RF_thresh_FHO
 
-acc_RF <- cm.RF_thresh[["overall"]][["Accuracy"]]*100
-auc_RF <- RF_roc[["auc"]]
-thresh_RF <- RF.thresh
-sens_RF <-  cm.RF_thresh[["byClass"]][["Sensitivity"]]*100
-spec_RF <- cm.RF_thresh[["byClass"]][["Specificity"]]*100
-FDR_RF <- ((cm.RF_thresh[["table"]][2,1])/(cm.RF_thresh[["table"]][2,1]+cm.RF_thresh[["table"]][2,2]))*100
-prec_RF <- cm.RF_thresh[["byClass"]][["Precision"]]*100
-mtry_best <- rf.fit[["bestTune"]][["mtry"]]
+acc_RF_FHO <- round(cm.RF_thresh_FHO[["overall"]][["Accuracy"]]*100,2)
+auc_RF_FHO <- round(RF_roc[["auc"]],2)
+thresh_RF_FHO <- RF.thresh
+sens_RF_FHO <-  round(cm.RF_thresh_FHO[["byClass"]][["Sensitivity"]]*100,2)
+spec_RF_FHO <- round(cm.RF_thresh_FHO[["byClass"]][["Specificity"]]*100,2)
+FDR_RF_FHO <- round(((cm.RF_thresh_FHO[["table"]][2,1])/(cm.RF_thresh_FHO[["table"]][2,1]+cm.RF_thresh_FHO[["table"]][2,2]))*100,2)
+prec_RF_FHO <- round(cm.RF_thresh_FHO[["byClass"]][["Precision"]]*100,2)
 ```
 
 ### SVM 
 
 ```{r FHO SVM, results="hold"}
+tic("SVM Predict")
+SVM.prob_FHO <- predict(svm.radial.fit, newdata=df_FHO , type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
+svm.predict.time <-  toc(quiet = TRUE)
+
+SVM.thresh_FHO <- SVM.thresh
+SVM.pred_thresh_FHO <- factor(ifelse(SVM.prob_FHO[,2]>SVM.thresh_FHO,"BT", "NBT"), levels=c("NBT", "BT"))
+cm.SVM_thresh_FHO <- confusionMatrix(factor(SVM.pred_thresh_FHO),df_FHO$Blue_Tarp_or_Not, positive = "BT") 
+"Threshold:"
+cm.SVM_thresh_FHO
+
+acc_SVM_FHO <- round(cm.SVM_thresh_FHO[["overall"]][["Accuracy"]]*100,2)
+auc_SVM_FHO <- round(SVM_roc[["auc"]],2)
+thresh_SVM_FHO <- SVM.thresh
+sens_SVM_FHO <-  round(cm.SVM_thresh_FHO[["byClass"]][["Sensitivity"]]*100,2)
+spec_SVM_FHO <- round(cm.SVM_thresh_FHO[["byClass"]][["Specificity"]]*100,2)
+FDR_SVM_FHO <- round(((cm.SVM_thresh_FHO[["table"]][2,1])/(cm.SVM_thresh_FHO[["table"]][2,1]+cm.SVM_thresh_FHO[["table"]][2,2]))*100,2)
+prec_SVM_FHO <- round(cm.SVM_thresh_FHO[["byClass"]][["Precision"]]*100,2)
+```
+
+```{r, echo=FALSE}
+parallel::stopCluster(cl)
+```
+
+### Table 3 - FHO Performance Summary 
+
+## {.unlisted .unnumbered} 
+
+#### **Performance Metrics: Hold-Out Test Data Set Scores**  
+
+|                   Method | KNN (k = `r k_knn`) |    LDA    |    QDA    | Log. Regression |  Random Forest (mtry = `r mtry_best`, nTrees = `r ntree`) | SVM (sigma = `r sigma_best`, C = `r C_best`)|
+|-------------------------:|:----------------:|:---------:|:---------:|:---------------:|:----------------:|:--------------:|
+|                 Accuracy | `r acc_knn_FHO`%   | `r acc_lda_FHO`%   | `r acc_qda_FHO`%   | `r acc_LR_FHO`%   | `r acc_RF_FHO`%    | `r acc_SVM_FHO`%   |
+|                      AUC | `r auc_knn_FHO`%   | `r auc_lda_FHO`%   | `r auc_qda_FHO`%   | `r auc_LR_FHO`%   | `r auc_RF_FHO`%    | `r auc_SVM_FHO`%   |
+|                      ROC |                    |                    |                    |                   |                   |                   |
+|                Threshold | `r thresh_knn_FHO` | `r thresh_lda_FHO` | `r thresh_qda_FHO` | `r thresh_LR_FHO` | `r thresh_RF_FHO` |`r thresh_SVM_FHO` |
+| Sensitivity=Recall=Power | `r sens_knn_FHO`%  | `r sens_lda_FHO`%  | `r sens_qda_FHO`%  | `r sens_LR_FHO`%  |`r sens_RF_FHO`%    | `r sens_SVM_FHO`%  |
+|        Specificity=1-FPR | `r spec_knn_FHO`%  | `r spec_lda_FHO`%  | `r spec_qda_FHO`%  | `r spec_LR_FHO`%  |`r spec_RF_FHO`%    |`r spec_SVM_FHO`%   |
+|                      FDR | `r FDR_knn_FHO`%   | `r FDR_lda_FHO`%   | `r FDR_qda_FHO`%   | `r FDR_LR_FHO`%   | `r FDR_RF_FHO`%    |`r FDR_SVM_FHO`%    |
+|            Precision=PPV | `r prec_knn_FHO`%  | `r prec_lda_FHO`%  | `r prec_qda_FHO`%  | `r prec_LR_FHO`%  |`r prec_RF_FHO`%    | `r prec_SVM_FHO`%  |
+|                    Cost  |
+
+Using the performance results for each model on the final hold out data set, the predicted cost ... 
+
+
+# Discussion 
+
+```{r Model Fit Run Time, results="hold"}
+
+#model.names <- array(c('Log.Reg.', 'LDA', 'QDA', 'KNN','RF', 'SVM'))
+
+mfrt.glm <- (glm.time$toc-glm.time$tic) 
+mfrt.lda <- (lda.time$toc-lda.time$tic)
+mfrt.qda <- (qda.time$toc-qda.time$tic) 
+mfrt.knn <- (knn.time$toc-knn.time$tic) 
+mfrt.rf <- (rf.time$toc-rf.time$tic)
+mfrt.svm <- (svm.time$toc-svm.time$tic)
+
+#model.fit.times <- tibble("Model"=model.names,"Run Time (s)"= c(mfrt.glm, mfrt.lda,mfrt.qda, mfrt.knn,mfrt.rf, mfrt.svm))
+
+#model.fit.times
 
 ```
 
+| Model | Run Time (s)|
+|:------|:-----------:|
+|Log. Reg.| `r mfrt.glm`|
+|LDA | `r mfrt.lda` |
+|QDA | `r mfrt.qda`
+|KNN | `r mfrt.knn`|
+|RF | `r mfrt.rf`|
+|SVM | `r mfrt.svm`|
 
-### Table 3 - Performance Metrics: Hold-Out Test Data Set Scores  
 
-```{r}
-#|                   Method | KNN (k = `r k_knn`) |    LDA    |    QDA    | Log. Regression | Random Forest (tuning param = ?) | SVM (tuning param = ?)|
-#|-------------------------:|:--------------:|:---------:|:---------:|:---------------:|:--------------------------------:|:---------------------:|
-#|                 Accuracy | `r acc_knn_FHO`%   | `r acc_lda_FHO`%   | `r acc_qda_FHO`%   | `r acc_LR_FHO`%   | `r acc_RF_FHO`    | `r acc_SVM_FHO`   |
-#|                      AUC | `r auc_knn_FHO`%   | `r auc_lda_FHO`%   | `r auc_qda_FHO`%   | `r auc_LR_FHO`%   | `r auc_RF_FHO`    | `r auc_SVM_FHO`   |
-#|                      ROC |                    |                    |                    |                   |                   |                   |
-#|                Threshold | `r thresh_knn_FHO` | `r thresh_lda_FHO` | `r thresh_qda_FHO` | `r thresh_LR_FHO` | `r thresh_RF_FHO` |`r thresh_SVM_FHO` |
-#| Sensitivity=Recall=Power | `r sens_knn_FHO`%  | `r sens_lda_FHO`%  | `r sens_qda_FHO`%  | `r sens_LR_FHO`%  |`r sens_RF_FHO`    | `r sens_SVM_FHO`  |
-#|        Specificity=1-FPR | `r spec_knn_FHO`%  | `r spec_lda_FHO`%  | `r spec_qda_FHO`%  | `r spec_LR_FHO`%  |`r spec_RF_FHO`    |`r spec_SVM_FHO`   |
-#|                      FDR | `r FDR_knn_FHO`%   | `r FDR_lda_FHO`%   | `r FDR_qda_FHO`%   | `r FDR_LR_FHO`%   | `r FDR_RF_FHO`    |`r FDR_SVM_FHO`    |
-#|            Precision=PPV | `r prec_knn_FHO`%  | `r prec_lda_FHO`%  | `r prec_qda_FHO`%  | `r prec_LR_FHO`%  |`r prec_RF_FHO`    | `r prec_SVM_FHO`  |
+
+```{r Predict Run Time, results="hold"}
+
+#model.names <- array(c('Log.Reg.', 'LDA', 'QDA', 'KNN','RF', 'SVM'))
+
+mprt.glm <- (glm.predict.time$toc-glm.predict.time$tic) 
+mprt.lda <- (lda.predict.time$toc-lda.predict.time$tic)
+mprt.qda <- (qda.predict.time$toc-qda.predict.time$tic) 
+mprt.knn <- (knn.predict.time$toc-knn.predict.time$tic) 
+mprt.rf <- (rf.predict.time$toc-rf.predict.time$tic)
+mprt.svm <- (svm.predict.time$toc-svm.predict.time$tic)
+
+#model.predict.times <- tibble("Model"=model.names,"Run Time (s)"= c(mprt.glm, mprt.lda,mprt.qda, mprt.knn,mprt.rf, mprt.svm))
+
+#model.predict.times
+
 ```
 
-## Model Performance 
+| Model | Run Time (s)|
+|:------|:-----------:|
+|Log. Reg.| `r mprt.glm`|
+|LDA | `r mprt.lda` |
+|QDA | `r mprt.qda`
+|KNN | `r mprt.knn`|
+|RF | `r mprt.rf`|
+|SVM | `r mprt.svm`|
 
-### Discussion 
+Run time varaition between devices, qualitative measure only. 
 
 (discussion on FHO data why we do this... what the benefits are... potential pitfalls)
 
@@ -856,7 +959,9 @@ mtry_best <- rf.fit[["bestTune"]][["mtry"]]
 
 handling imbalanced classes 
 
-## Future Work 
+# Conclusions 
+
+# Future Work 
 
 ```{r}
 #consider if I was able to find an additional data source like lidar or infrared to pair with this dataset to improve model performance... ? 
@@ -872,6 +977,8 @@ handling imbalanced classes
 * Inspiration to color-code the ggpairs figure came from Professor Schwartz showing us another student's project [Michael Davies] in class. 
 * How to make the tables update automatically with "r var_name" assist by Alex Link and Michael Davies 
 * RMD file Formatting: https://bookdown.org/yihui/rmarkdown/documents.html 
+* Timing Code Block Execution: https://www.r-bloggers.com/2017/05/5-ways-to-measure-running-time-of-r-code/ 
+* Unlisted, unnumbered tabs: https://stackoverflow.com/questions/38062706/rmarkdown-how-to-end-tabbed-content 
 
 # Appendix A: Analysis Methods Reference Info
 
@@ -883,3 +990,11 @@ handling imbalanced classes
 
 
 
+QUESTIONS FOR OH 
+ * the auc for the FHO data should be the same as the auc for the training data right?
+ 
+```{r, echo=FALSE}
+toc()
+```
+ 
+ 

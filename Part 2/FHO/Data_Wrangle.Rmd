@@ -16,13 +16,13 @@ library(tidyverse)
 
 ```{r}
 df1 <- read.csv("orthovnir057_ROI_NON_Blue_Tarps.csv", header = TRUE)
-df1["Blue_Tarp_or_Not"] <- "NBT"
+df1["Blue_Tarp_or_Not"] <- 0
 head(df1)
 ```
 
 ```{r}
 df2 <- read.csv("orthovnir067_ROI_Blue_Tarps.csv", header = TRUE)
-df2["Blue_Tarp_or_Not"] <- "BT"
+df2["Blue_Tarp_or_Not"] <- 1
 head(df2)
 ```
 
@@ -33,31 +33,31 @@ head(df3)
 
 ```{r}
 df4 <- read.csv("orthovnir067_ROI_NOT_Blue_Tarps.csv", header = TRUE) 
-df4["Blue_Tarp_or_Not"] <- "NBT"
+df4["Blue_Tarp_or_Not"] <- 0
 head(df4)
 ```
 
 ```{r}
 df5 <- read.csv("orthovnir069_ROI_Blue_Tarps.csv", header = TRUE) 
-df5["Blue_Tarp_or_Not"] <- "BT"
+df5["Blue_Tarp_or_Not"] <- 1
 head(df5)
 ```
 
 ```{r}
 df6 <- read.csv("orthovnir069_ROI_NOT_Blue_Tarps.csv", header = TRUE)
-df6["Blue_Tarp_or_Not"] <- "NBT"
+df6["Blue_Tarp_or_Not"] <- 0
 head(df6)
 ```
 
 ```{r}
 df7 <- read.csv("orthovnir078_ROI_Blue_Tarps.csv", header = TRUE)
-df7["Blue_Tarp_or_Not"] <- "BT"
+df7["Blue_Tarp_or_Not"] <- 1
 head(df7)
 ```
 
 ```{r}
 df8 <- read.csv("orthovnir078_ROI_NON_Blue_Tarps.csv", header = TRUE)
-df8["Blue_Tarp_or_Not"] <- "NBT"
+df8["Blue_Tarp_or_Not"] <- 0
 head(df8)
 ```
 

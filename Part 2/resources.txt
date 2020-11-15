@@ -55,3 +55,21 @@ svm.poly.fit <- train(Blue_Tarp_or_Not~Red+Green+Blue,
 
 svm.poly.fit
 ```
+
+
+model.fit.times <- cbind(c(mfrt.glm, mfrt.lda,mfrt.qda, mfrt.knn,mfrt.rf, mfrt.svm))
+
+#model.fit.times.names <- list(c('Log.Reg.', 'LDA', 'QDA', 'KNN','RF', 'SVM'), c((glm.time$toc-glm.time$tic), (lda.time$toc-lda.time$tic),(qda.time$toc-qda.time$tic), (knn.time$toc-knn.time$tic), (rf.time$toc-rf.time$tic), (svm.time$toc-svm.time$tic)))
+
+#model.fit.times <- data.frame(model.fit.times.names)
+#names(model.fit.times) <- sub("c..Log.Reg.....LDA....QDA....KNN....RF....SVM..", "Model", names(model.fit.times))
+#names(model.fit.times) <- sub("c.elapsed...14.8400000000001..elapsed...1.94999999999982..elapsed...1.71000000000004..", "Run Time (s)", names(model.fit.times))
+#model.fit.times <- rename(model.fit.times, "Run Time (s)" = model.fit.times[,2])
+
+model.predict.times.names <- list(c('Log.Reg.', 'LDA', 'QDA', 'KNN','RF', 'SVM'), c((glm.predict.time$toc-glm.predict.time$tic), (lda.predict.time$toc-lda.predict.time$tic), (qda.predict.time$toc-qda.predict.time$tic), (knn.predict.time$toc-knn.predict.time$tic), (rf.predict.time$toc-rf.predict.time$tic), (svm.predict.time$toc-svm.predict.time$tic)))
+
+model.predict.times <- data.frame(model.predict.times.names)
+names(model.predict.times) <- sub("c..Log.Reg.....LDA....QDA....KNN....RF....SVM..", "Model", names(model.predict.times))
+names(model.predict.times) <- sub("c.elapsed...6.27999999999975..elapsed...6.35000000000036..elapsed...6.55000000000018..", "Run Time (s)", names(model.predict.times))
+
+model.predict.times
