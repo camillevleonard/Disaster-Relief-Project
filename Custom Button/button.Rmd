@@ -1,0 +1,21 @@
+---
+title: "Custom Button"
+author: "Camille Leonard"
+date: "11/15/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<button onclick="RG_CB()"> Red-Green </button>
+
+<button onclick="Deuteranopia()"> Deuteranopia </button> 
+
+<button onclick="Protanopia()"> Protanopia </button>
+
+<button onclick="Tritanopia()"> Tritanopia </button>
+
+
+#000000, #E69F00, #56B4E9, #009E73, #F0E442, #0072B2, #D55E00, #CC79A7

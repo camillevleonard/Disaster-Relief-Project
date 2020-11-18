@@ -35,18 +35,27 @@ As the final project for SYS 6018 - Data Mining, we were assigned to build model
 
 # Project Budget
 
-The US Government spent [$1.5B on Haiti disaster relief](https://www.rand.org/pubs/research_reports/RR304.html) by the end of 2010. For this project, we will assume that 5 million dollars were allocated to our team to deliver supplies to displaced individuals in the immediate aftermath. Our team has been assigned an area where 8,000 displaced people are expected to be. Anything less than a 85% delivery success rate will be considered a disaster relief failure. 85% of 8,000 people is 6,800.    
+The US Government spent [$1.5B on Haiti disaster relief](https://www.rand.org/pubs/research_reports/RR304.html) by the end of 2010. For this project, we will assume that 5 million dollars were allocated to our team to deliver supplies to displaced individuals in the immediate aftermath. Our team has been assigned an area where 8,000 displaced people are expected to be. Anything less than a 85% delivery success rate will be considered a disaster relief failure. 90% of 8,000 people is 7,200.    
 
 |                  |          |
 |:----------------|:--------:|
 |Budget           |$5,000,000|
-|Cost per Delivery (True Positive)| 
-|Cost per Mis-Delivery (False Positive)| 
-
+|Cost per Delivery (True Positive)| -$1,000 | 
+|Cost per Mis-Delivery (False Positive)| -$500 | 
+|Cost per Missed Delivery (False Negative)| -$6,250 | 
+|Cost per True Negative| $0|
+ 
+```{r, echo=FALSE, message=FALSE}
+TP_C = -1000
+FP_C = -500
+FN_C = -6250
+```
  
 * method of delivery
 * cost of resources
 * time from disaster to unsurvivable conditions 
+
+
 
 # Data Exploration   
 
@@ -125,19 +134,30 @@ df$Class <- factor(df$Class) #make Class a factor variable.
 ```{r, message=FALSE}
 #Reference [1]
 # The palette with grey:
-cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
-# To use for fills, add
-#scale_fill_manual(values=cbPalette)
-  
-ggpairs(df[,2:4], lower.panel = NULL, upper = list(continuous = wrap("cor", size = 3)), aes(color=df$Class))# + scale_fill_manual(values=cbPalette) 
-#view scatter and correlations
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73",  "#CC79A7", "#0072B2", "#D55E00")
+#"#F0E442",
+
+#view scatter and correlations  
+p <- ggpairs(df[,2:4], lower.panel = NULL, upper = list(continuous = wrap("cor", size = 3)), aes(color=df$Class)) #+ scale_fill_manual(values=cbPalette) 
+
+#Reference: https://stackoverflow.com/questions/34740210/how-to-change-the-color-palette-for-ggallyggpairs/34743555
+for(i in 1:p$nrow) {
+  for(j in 1:p$ncol){
+    p[i,j] <- p[i,j] + 
+        scale_fill_manual(values=cbPalette) +
+        scale_color_manual(values=cbPalette)  
+  }
+}
+
+p
+
 attach(df) #attach df variables 
 ```
 
 ### 3D Scatter
 
 ```{r}
-fig <- plot_ly(df, x=~Red, y=~Green, z=~Blue, color=~Class) #Reference: https://plotly.com/r/3d-scatter-plots/ https://plotly.com/r/3d-surface-plots/
+fig <- plot_ly(df, x=~Red, y=~Green, z=~Blue, color=~Class, colors=c("#999999", "#E69F00", "#56B4E9", "#009E73",  "#CC79A7")) #Reference: https://plotly.com/r/3d-scatter-plots/ https://plotly.com/r/3d-surface-plots/
 fig <- fig %>% add_markers()
 fig <- fig %>% layout(scene=list(xaxis=list(title="Red"),
                      yaxis = list(title = 'Green'),
@@ -177,7 +197,7 @@ attach(df_factor)
 ### 3D Scatter - Binary
 
 ```{r}
-fig1 <- plot_ly(df_factor, x=~Red, y=~Green, z=~Blue, color=~Blue_Tarp_or_Not) #Reference: https://plotly.com/r/3d-scatter-plots/ https://plotly.com/r/3d-surface-plots/
+fig1 <- plot_ly(df_factor, x=~Red, y=~Green, z=~Blue, color=~Blue_Tarp_or_Not, colors = cbPalette) #Reference: https://plotly.com/r/3d-scatter-plots/ https://plotly.com/r/3d-surface-plots/
 fig1 <- fig1 %>% add_markers()
 fig1 <- fig1 %>% layout(scene=list(xaxis=list(title="Red"),
                      yaxis = list(title = 'Green'),
@@ -237,7 +257,7 @@ Test model performance on Train data to select threshold values...
 #pass
 glm.prob <- predict(glm.fit, newdata=df_factor , type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
 par(pty="s")
-glm_roc <- roc(df_factor $Blue_Tarp_or_Not, glm.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="Log. Reg. ROC Curve") 
+glm_roc <- roc(df_factor $Blue_Tarp_or_Not, glm.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#0072B2", lwd=4, print.auc=TRUE, main="Log. Reg. ROC Curve") 
 ```
 
 ### Thresholds
@@ -249,7 +269,7 @@ roc.glm.df <- data.frame(tpp=roc.info_glm$sensitivities*100, fpp=(1-roc.info_glm
 
 glm.thresholds <- data.matrix(roc.glm.df$thresholds)
 
-fig2 <- plot_ly(roc.glm.df, x=~tpp, y=~fpp, z=~thresholds) #Reference: https://plotly.com/r/3d-scatter-plots/ https://plotly.com/r/3d-surface-plots/
+fig2 <- plot_ly(roc.glm.df, x=~tpp, y=~fpp, z=~thresholds, colors = "#0072B2") #Reference: https://plotly.com/r/3d-scatter-plots/ https://plotly.com/r/3d-surface-plots/
 fig2 <- fig2 %>% add_markers()
 fig2 <- fig2 %>% layout(scene=list(xaxis=list(title="True Positive Rate"),
                      yaxis = list(title = 'False Positive Rate'),
@@ -258,13 +278,37 @@ fig2 <- fig2 %>% layout(scene=list(xaxis=list(title="True Positive Rate"),
 fig2
 ```
 
+```{r decisions, eval=FALSE}
+
+Confusion_Matrix <- set_names(seq(0.01,0.99,0.01)) %>% 
+  map( ~ Blue_Tarp_or_Not(factor(ifelse(synth_dat$p>=.x,'T','F')), factor(synth_dat$y)))
+
+Cost_Benefit_Matrix <- matrix(c(0,-5000,-300,-1000), nrow=2, ncol=2, byrow=TRUE)
+  
+Cost <- Confusion_Matrix %>%
+  map( ~ sum(.x * Cost_Benefit_Matrix))
+
+Cost_actual <- Confusion_Matrix %>%
+  map( ~ sum((.x*Cost_Benefit_Matrix)[2,]))
+
+tibble(threshold=as.numeric(names(Cost)), 
+       cost=unlist(Cost), cost_actual=unlist(Cost_actual)) %>%
+  ggplot() + geom_line(aes(x=threshold, y=cost, color='perceived'), size=3) +
+  geom_line(aes(x=threshold, y=cost_actual, color='actual'), 
+            size=2, linetype='dotted') +
+  ylim(c(-4000000,0)) + scale_fill_manual(values=c('forestgreen','purple')) +
+  geom_abline(slope=0, intercept=-2000000)
+```
+
+
 ### Confusion Matrix
 
 ```{r Log Reg Confusion Matrix,  results="hold"}
-lr.thresh <- 0.5
+lr.thresh <- 0.003
 glm.pred_thresh <- factor(ifelse(glm.prob[,2]>lr.thresh,"BT", "NBT"), levels=c("NBT", "BT"))
 cm.glm_thresh <- confusionMatrix(factor(glm.pred_thresh),df_factor $Blue_Tarp_or_Not, positive = "BT") 
-"Threshold: 0.5"
+"Threshold:"
+lr.thresh
 cm.glm_thresh
 
 acc_LR <- cm.glm_thresh[["overall"]][["Accuracy"]]*100
@@ -274,6 +318,9 @@ sens_LR <-  cm.glm_thresh[["byClass"]][["Sensitivity"]]*100
 spec_LR <- cm.glm_thresh[["byClass"]][["Specificity"]]*100
 FDR_LR <- ((cm.glm_thresh[["table"]][2,1])/(cm.glm_thresh[["table"]][2,1]+cm.glm_thresh[["table"]][2,2]))*100
 prec_LR <- cm.glm_thresh[["byClass"]][["Precision"]]*100
+
+cost.glm <- cm.glm_thresh[["table"]][1]*0 + cm.glm_thresh[["table"]][2]*FP_C + cm.glm_thresh[["table"]][3]*FN_C + cm.glm_thresh[["table"]][4]*TP_C
+cost.glm
 ```
 ### Sampling Variability 
 
@@ -315,7 +362,7 @@ lda.fit
 #pass
 lda.prob <- predict(lda.fit, newdata=df_factor, type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
 par(pty="s")
-lda_roc <- roc(df_factor$Blue_Tarp_or_Not, lda.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="LDA ROC Curve") 
+lda_roc <- roc(df_factor$Blue_Tarp_or_Not, lda.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#0072B2", lwd=4, print.auc=TRUE, main="LDA ROC Curve") 
 ```
 
 ### Thresholds
@@ -325,7 +372,7 @@ roc.info_lda <- roc(df_factor $Blue_Tarp_or_Not, lda.prob[,2], legacy.axes=TRUE)
 roc.lda.df <- data.frame(tpp=roc.info_lda$sensitivities*100, fpp=(1-roc.info_lda$specificities)*100, thresholds=roc.info_lda$thresholds)
 #roc.lda.df[roc.lda.df>91.5 & roc.lda.df < 91.6,]
 
-fig3 <- plot_ly(roc.lda.df, x=~tpp, y=~fpp, z=~thresholds) #Reference: https://plotly.com/r/3d-scatter-plots/ https://plotly.com/r/3d-surface-plots/
+fig3 <- plot_ly(roc.lda.df, x=~tpp, y=~fpp, z=~thresholds, colors = "#0072B2") #Reference: https://plotly.com/r/3d-scatter-plots/ https://plotly.com/r/3d-surface-plots/
 fig3 <- fig3 %>% add_markers()
 fig3 <- fig3 %>% layout(scene=list(xaxis=list(title="True Positive Rate"),
                      yaxis = list(title = 'False Positive Rate'),
@@ -337,10 +384,12 @@ fig3
 ### Confusion Matrix 
 
 ```{r LDA Confusion Matrix,  results="hold"}
-lda.thresh <- 0.5
+lda.thresh <- 0.0008
+
 lda.pred_thresh <- factor(ifelse(lda.prob[,2]>lda.thresh,"BT", "NBT"), levels=c("NBT", "BT"))
 cm.lda_thresh <- confusionMatrix(factor(lda.pred_thresh),df_factor$Blue_Tarp_or_Not, positive = "BT") 
-"Threshold: 0.5"
+"Threshold:"
+lda.thresh
 cm.lda_thresh
 
 acc_lda <- cm.lda_thresh[["overall"]][["Accuracy"]]*100
@@ -350,6 +399,9 @@ sens_lda <-  cm.lda_thresh[["byClass"]][["Sensitivity"]]*100
 spec_lda <- cm.lda_thresh[["byClass"]][["Specificity"]]*100
 FDR_lda <- ((cm.lda_thresh[["table"]][2,1])/(cm.lda_thresh[["table"]][2,1]+cm.lda_thresh[["table"]][2,2]))*100
 prec_lda <- cm.lda_thresh[["byClass"]][["Precision"]]*100
+
+cost.lda <- cm.lda_thresh[["table"]][1]*0 + cm.lda_thresh[["table"]][2]*FP_C + cm.lda_thresh[["table"]][3]*FN_C + cm.lda_thresh[["table"]][4]*TP_C
+cost.lda
 ```
 
 ### Sampling Variability 
@@ -391,7 +443,7 @@ qda.fit
 #pass
 qda.prob <- predict(qda.fit, newdata=df_factor , type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
 par(pty="s")
-qda_roc <- roc(df_factor $Blue_Tarp_or_Not, qda.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="QDA ROC Curve") 
+qda_roc <- roc(df_factor $Blue_Tarp_or_Not, qda.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#0072B2", lwd=4, print.auc=TRUE, main="QDA ROC Curve") 
 ```
 
 ### Thresholds 
@@ -401,7 +453,7 @@ roc.info_qda <- roc(df_factor$Blue_Tarp_or_Not, qda.prob[,2], legacy.axes=TRUE)
 roc.qda.df <- data.frame(tpp=roc.info_qda$sensitivities*100, fpp=(1-roc.info_qda$specificities)*100, thresholds=roc.info_qda$thresholds)
 #roc.qda.df[roc.qda.df>98 & roc.qda.df < 99,]
 
-fig4 <- plot_ly(roc.qda.df, x=~tpp, y=~fpp, z=~thresholds) #Reference: https://plotly.com/r/3d-scatter-plots/ https://plotly.com/r/3d-surface-plots/
+fig4 <- plot_ly(roc.qda.df, x=~tpp, y=~fpp, z=~thresholds, colors = "#0072B2") #Reference: https://plotly.com/r/3d-scatter-plots/ https://plotly.com/r/3d-surface-plots/
 fig4 <- fig4 %>% add_markers()
 fig4 <- fig4 %>% layout(scene=list(xaxis=list(title="True Positive Rate"),
                      yaxis = list(title = 'False Positive Rate'),
@@ -413,10 +465,11 @@ fig4
 ### Confusion Matrix 
 
 ```{r QDA Confusion Matrix,  results="hold"}
-qda.thresh <- 0.5
+qda.thresh <- 0.0016
 qda.pred_thresh <- factor(ifelse(qda.prob[,2]>qda.thresh,"BT", "NBT"), levels=c("NBT", "BT"))
 cm.qda_thresh <- confusionMatrix(factor(qda.pred_thresh),df_factor $Blue_Tarp_or_Not, positive = "BT") 
-"Threshold: 0.5"
+"Threshold:"
+qda.thresh
 cm.qda_thresh
 
 acc_qda <- cm.qda_thresh[["overall"]][["Accuracy"]]*100
@@ -426,6 +479,9 @@ sens_qda <-  cm.qda_thresh[["byClass"]][["Sensitivity"]]*100
 spec_qda <- cm.qda_thresh[["byClass"]][["Specificity"]]*100
 FDR_qda <- ((cm.qda_thresh[["table"]][2,1])/(cm.qda_thresh[["table"]][2,1]+cm.qda_thresh[["table"]][2,2]))*100
 prec_qda <- cm.qda_thresh[["byClass"]][["Precision"]]*100
+
+cost.qda <- cm.qda_thresh[["table"]][1]*0 + cm.qda_thresh[["table"]][2]*FP_C + cm.qda_thresh[["table"]][3]*FN_C + cm.qda_thresh[["table"]][4]*TP_C
+cost.qda
 ```
 
 ### Sampling Variability 
@@ -475,7 +531,7 @@ plot(knn.fit)
 #pass
 knn.prob <- predict(knn.fit, newdata=df_factor , type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
 par(pty="s")
-knn_roc <- roc(df_factor $Blue_Tarp_or_Not, knn.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="KNN ROC Curve") 
+knn_roc <- roc(df_factor $Blue_Tarp_or_Not, knn.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#0072B2", lwd=4, print.auc=TRUE, main="KNN ROC Curve") 
 ```
 
 ### Thresholds 
@@ -488,7 +544,7 @@ roc.knn.df <- data.frame(tpp=roc.info_knn$sensitivities*100, fpp=(1-roc.info_knn
 #roc.knn.df[roc.knn.df>99 & roc.knn.df < 100,]
 #roc.knn.df
 
-fig5 <- plot_ly(roc.knn.df, x=~tpp, y=~fpp, z=~thresholds) #Reference: https://plotly.com/r/3d-scatter-plots/ https://plotly.com/r/3d-surface-plots/
+fig5 <- plot_ly(roc.knn.df, x=~tpp, y=~fpp, z=~thresholds, colors = "#0072B2") #Reference: https://plotly.com/r/3d-scatter-plots/ https://plotly.com/r/3d-surface-plots/
 fig5 <- fig5 %>% add_markers()
 fig5 <- fig5 %>% layout(scene=list(xaxis=list(title="True Positive Rate"),
                      yaxis = list(title = 'False Positive Rate'),
@@ -500,10 +556,11 @@ fig5
 ### Confusion Matrix 
 
 ```{r KNN Confusion Matrix,  results="hold"}
-knn.thresh <- 0.5
+knn.thresh <- 0.035
 knn.pred_thresh <- factor(ifelse(knn.prob[,2]>knn.thresh,"BT", "NBT"), levels=c("NBT", "BT"))
 cm.knn_thresh <- confusionMatrix(factor(knn.pred_thresh),df_factor $Blue_Tarp_or_Not, positive = "BT") 
-"Threshold: 0.5"
+"Threshold:"
+knn.thresh
 cm.knn_thresh
 
 acc_knn <- cm.knn_thresh[["overall"]][["Accuracy"]]*100
@@ -514,6 +571,9 @@ spec_knn <- cm.knn_thresh[["byClass"]][["Specificity"]]*100
 FDR_knn <- ((cm.knn_thresh[["table"]][2,1])/(cm.knn_thresh[["table"]][2,1]+cm.knn_thresh[["table"]][2,2]))*100
 prec_knn <- cm.knn_thresh[["byClass"]][["Precision"]]*100
 k_knn <- knn.fit[["bestTune"]][["k"]]
+
+cost.knn <- cm.knn_thresh[["table"]][1]*0 + cm.knn_thresh[["table"]][2]*FP_C + cm.knn_thresh[["table"]][3]*FN_C + cm.knn_thresh[["table"]][4]*TP_C
+cost.knn
 ```
 ### Sampling Variability 
 
@@ -562,7 +622,7 @@ plot(rf.fit)
 #pass
 RF.prob <- predict(rf.fit, newdata=df_factor , type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
 par(pty="s")
-RF_roc <- roc(df_factor $Blue_Tarp_or_Not, RF.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="RF ROC Curve") 
+RF_roc <- roc(df_factor $Blue_Tarp_or_Not, RF.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#0072B2", lwd=4, print.auc=TRUE, main="RF ROC Curve") 
 ```
 
 ### Thresholds 
@@ -573,7 +633,7 @@ roc.rf.df <- data.frame(tpp=roc.info_rf$sensitivities*100, fpp=(1-roc.info_rf$sp
 #roc.rf.df[roc.rf.df>99 & roc.rf.df < 100,]
 #roc.rf.df
 
-fig6 <- plot_ly(roc.rf.df, x=~tpp, y=~fpp, z=~thresholds) #Reference: https://plotly.com/r/3d-scatter-plots/ https://plotly.com/r/3d-surface-plots/
+fig6 <- plot_ly(roc.rf.df, x=~tpp, y=~fpp, z=~thresholds, colors = "#0072B2") #Reference: https://plotly.com/r/3d-scatter-plots/ https://plotly.com/r/3d-surface-plots/
 fig6 <- fig6 %>% add_markers()
 fig6 <- fig6 %>% layout(scene=list(xaxis=list(title="True Positive Rate"),
                      yaxis = list(title = 'False Positive Rate'),
@@ -585,10 +645,11 @@ fig6
 ### Confusion Matrix 
 
 ```{r RF Confusion Matrix,  results="hold"}
-RF.thresh <- 0.5
+RF.thresh <- 0.45
 RF.pred_thresh <- factor(ifelse(RF.prob[,2]>RF.thresh,"BT", "NBT"), levels=c("NBT", "BT"))
 cm.RF_thresh <- confusionMatrix(factor(RF.pred_thresh),df_factor $Blue_Tarp_or_Not, positive = "BT") 
-"Threshold: 0.5"
+"Threshold:"
+RF.thresh
 cm.RF_thresh
 
 acc_RF <- cm.RF_thresh[["overall"]][["Accuracy"]]*100
@@ -600,6 +661,9 @@ FDR_RF <- ((cm.RF_thresh[["table"]][2,1])/(cm.RF_thresh[["table"]][2,1]+cm.RF_th
 prec_RF <- cm.RF_thresh[["byClass"]][["Precision"]]*100
 mtry_best <- rf.fit[["bestTune"]][["mtry"]]
 ntree <- rf.fit[["finalModel"]][["ntree"]]
+
+cost.RF <- cm.RF_thresh[["table"]][1]*0 + cm.RF_thresh[["table"]][2]*FP_C + cm.RF_thresh[["table"]][3]*FN_C + cm.RF_thresh[["table"]][4]*TP_C
+cost.RF
 ```
 ### Sampling Variability 
 
@@ -656,7 +720,7 @@ Both linear and poly SVM functions were considered. Radial SVM produced the high
 #pass
 SVM.prob <- predict(svm.radial.fit, newdata=df_factor , type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
 par(pty="s")
-SVM_roc <- roc(df_factor $Blue_Tarp_or_Not, SVM.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#965fd4", lwd=4, print.auc=TRUE, main="SVM ROC Curve") 
+SVM_roc <- roc(df_factor $Blue_Tarp_or_Not, SVM.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#0072B2", lwd=4, print.auc=TRUE, main="SVM ROC Curve") 
 ```
 
 ### Thresholds
@@ -667,7 +731,7 @@ roc.svm.df <- data.frame(tpp=roc.info_svm$sensitivities*100, fpp=(1-roc.info_svm
 #roc.svm.df[roc.svm.df>99 & roc.svm.df < 100,]
 #roc.svm.df
 
-fig7 <- plot_ly(roc.svm.df, x=~tpp, y=~fpp, z=~thresholds) #Reference: https://plotly.com/r/3d-scatter-plots/ https://plotly.com/r/3d-surface-plots/
+fig7 <- plot_ly(roc.svm.df, x=~tpp, y=~fpp, z=~thresholds, colors = "#0072B2") #Reference: https://plotly.com/r/3d-scatter-plots/ https://plotly.com/r/3d-surface-plots/
 fig7 <- fig7 %>% add_markers()
 fig7 <- fig7 %>% layout(scene=list(xaxis=list(title="True Positive Rate"),
                      yaxis = list(title = 'False Positive Rate'),
@@ -679,10 +743,11 @@ fig7
 ### Confusion Matrix 
 
 ```{r SVM Confusion Matrix,  results="hold"}
-SVM.thresh <- 0.5
+SVM.thresh <- 0.0017
 SVM.pred_thresh <- factor(ifelse(SVM.prob[,2]>SVM.thresh,"BT", "NBT"), levels=c("NBT", "BT"))
 cm.SVM_thresh <- confusionMatrix(factor(SVM.pred_thresh),df_factor $Blue_Tarp_or_Not, positive = "BT") 
-"Threshold: 0.5"
+"Threshold:"
+SVM.thresh
 cm.SVM_thresh
 
 acc_SVM <- cm.SVM_thresh[["overall"]][["Accuracy"]]*100
@@ -694,6 +759,9 @@ FDR_SVM <- ((cm.SVM_thresh[["table"]][2,1])/(cm.SVM_thresh[["table"]][2,1]+cm.SV
 prec_SVM <- cm.SVM_thresh[["byClass"]][["Precision"]]*100
 sigma_best <- round(svm.radial.fit[["bestTune"]][["sigma"]], 4)
 C_best <- svm.radial.fit[["bestTune"]][["C"]]
+
+cost.SVM <- cm.SVM_thresh[["table"]][1]*0 + cm.SVM_thresh[["table"]][2]*FP_C + cm.SVM_thresh[["table"]][3]*FN_C + cm.SVM_thresh[["table"]][4]*TP_C
+cost.SVM
 ```
 ### Sampling Variability 
 
@@ -717,11 +785,12 @@ The average accuracy across ten folds is `r round(acc_SVM, 2)` with a standard d
 |    Accuracy | `r round(acc_knn,2)`%   | `r round(acc_lda,2)`%   | `r round(acc_qda,2)`%   | `r round(acc_LR,2)`%  | `r round(acc_RF,2)`%| `r round(acc_SVM,2)`%   |
 |         AUC | `r round(auc_knn,2)`%   | `r round(auc_lda,2)`%   | `r round(auc_qda,2)`%   | `r round(auc_LR,2)`%  | `r round(auc_RF,2)`%| `r round(auc_SVM,2)`%   |
 |         ROC |                         |                         |                         |                       |                    |                        |
-|   Threshold | `r round(thresh_knn,2)` | `r round(thresh_lda,2)` | `r round(thresh_qda,2)` | `r round(thresh_LR,2)`| `r round(thresh_RF,2)`|`r round(thresh_SVM,2)`|
+|   Threshold | `r round(thresh_knn,5)` | `r round(thresh_lda,5)` | `r round(thresh_qda,5)` | `r round(thresh_LR,5)`| `r round(thresh_RF,5)`|`r round(thresh_SVM,5)`|
 | Sensitivity | `r round(sens_knn,2)`%  | `r round(sens_lda,2)`%  | `r round(sens_qda,2)`%  | `r round(sens_LR,2)`% |`r round(sens_RF,2)`%| `r round(sens_SVM,2)`%  |
 | Specificity | `r round(spec_knn,2)`%  | `r round(spec_lda,2)`%  | `r round(spec_qda,2)`%  | `r round(spec_LR,2)`% |`r round(spec_RF,2)`%|`r round(spec_SVM,2)`%   |
 |         FDR | `r round(FDR_knn,2)`%   | `r round(FDR_lda,2)`%   | `r round(FDR_qda,2)`%   | `r round(FDR_LR,2)`%  | `r round(FDR_RF,2)`%|`r round(FDR_SVM,2)`%    |
 |   Precision | `r round(prec_knn,2)`%  | `r round(prec_lda,2)`%  | `r round(prec_qda,2)`%  | `r round(prec_LR,2)`% |`r round(prec_RF,2)`%| `r round(prec_SVM,2)`%  |
+|        Cost | ` r cost.knn`           | ` r cost.lda`           | `r cost.qda`            | ` r cost.glm`         | ` r cost.RF `       | ` r cost.SVM`
 
 Model performance based on running training data through the fitted model. ~**Make some comments here about variation between folds**~ 
 
@@ -747,6 +816,7 @@ lr.thresh_FHO <- lr.thresh
 glm.pred_thresh_FHO <- factor(ifelse(glm.prob_FHO[,2]>lr.thresh_FHO,"BT", "NBT"), levels=c("NBT", "BT"))
 cm.glm_thresh_FHO <- confusionMatrix(factor(glm.pred_thresh_FHO),df_FHO$Blue_Tarp_or_Not, positive = "BT") 
 "Threshold:" 
+lr.thresh_FHO
 cm.glm_thresh_FHO
 
 acc_LR_FHO <- round(cm.glm_thresh_FHO[["overall"]][["Accuracy"]]*100, 2)
@@ -770,6 +840,7 @@ lda.thresh_FHO <- lda.thresh
 lda.pred_thresh_FHO <- factor(ifelse(lda.prob_FHO[,2]>lda.thresh_FHO,"BT", "NBT"), levels=c("NBT", "BT"))
 cm.lda_thresh_FHO <- confusionMatrix(factor(lda.pred_thresh_FHO),df_FHO$Blue_Tarp_or_Not, positive = "BT") 
 "Threshold:" 
+lda.thresh_FHO
 cm.lda_thresh_FHO
 
 acc_lda_FHO <- round(cm.lda_thresh_FHO[["overall"]][["Accuracy"]]*100, 2)
@@ -793,6 +864,7 @@ qda.thresh_FHO <- qda.thresh
 qda.pred_thresh_FHO <- factor(ifelse(qda.prob_FHO[,2]>qda.thresh_FHO,"BT", "NBT"), levels=c("NBT", "BT"))
 cm.qda_thresh_FHO <- confusionMatrix(factor(qda.pred_thresh_FHO),df_FHO$Blue_Tarp_or_Not, positive = "BT") 
 "Threshold:" 
+qda.thresh_FHO
 cm.qda_thresh_FHO
 
 acc_qda_FHO <- round(cm.qda_thresh_FHO[["overall"]][["Accuracy"]]*100,2)
@@ -815,6 +887,7 @@ knn.thresh_FHO <- knn.thresh
 knn.pred_thresh_FHO <- factor(ifelse(knn.prob_FHO[,2]>knn.thresh_FHO,"BT", "NBT"), levels=c("NBT", "BT"))
 cm.knn_thresh_FHO <- confusionMatrix(factor(knn.pred_thresh_FHO),df_FHO$Blue_Tarp_or_Not, positive = "BT") 
 "Threshold:" 
+knn.thresh_FHO
 cm.knn_thresh_FHO
 
 acc_knn_FHO <- round(cm.knn_thresh_FHO[["overall"]][["Accuracy"]]*100,2)
@@ -837,6 +910,7 @@ RF.thresh_FHO <- RF.thresh
 RF.pred_thresh_FHO <- factor(ifelse(RF.prob_FHO[,2]>RF.thresh_FHO,"BT", "NBT"), levels=c("NBT", "BT"))
 cm.RF_thresh_FHO <- confusionMatrix(factor(RF.pred_thresh_FHO),df_FHO$Blue_Tarp_or_Not, positive = "BT") 
 "Threshold:"
+RF.thresh_FHO
 cm.RF_thresh_FHO
 
 acc_RF_FHO <- round(cm.RF_thresh_FHO[["overall"]][["Accuracy"]]*100,2)
@@ -859,6 +933,7 @@ SVM.thresh_FHO <- SVM.thresh
 SVM.pred_thresh_FHO <- factor(ifelse(SVM.prob_FHO[,2]>SVM.thresh_FHO,"BT", "NBT"), levels=c("NBT", "BT"))
 cm.SVM_thresh_FHO <- confusionMatrix(factor(SVM.pred_thresh_FHO),df_FHO$Blue_Tarp_or_Not, positive = "BT") 
 "Threshold:"
+SVM.thresh_FHO
 cm.SVM_thresh_FHO
 
 acc_SVM_FHO <- round(cm.SVM_thresh_FHO[["overall"]][["Accuracy"]]*100,2)
@@ -890,7 +965,7 @@ parallel::stopCluster(cl)
 |        Specificity=1-FPR | `r spec_knn_FHO`%  | `r spec_lda_FHO`%  | `r spec_qda_FHO`%  | `r spec_LR_FHO`%  |`r spec_RF_FHO`%    |`r spec_SVM_FHO`%   |
 |                      FDR | `r FDR_knn_FHO`%   | `r FDR_lda_FHO`%   | `r FDR_qda_FHO`%   | `r FDR_LR_FHO`%   | `r FDR_RF_FHO`%    |`r FDR_SVM_FHO`%    |
 |            Precision=PPV | `r prec_knn_FHO`%  | `r prec_lda_FHO`%  | `r prec_qda_FHO`%  | `r prec_LR_FHO`%  |`r prec_RF_FHO`%    | `r prec_SVM_FHO`%  |
-|                    Cost  |
+
 
 Using the performance results for each model on the final hold out data set, the predicted cost ...  
 
@@ -899,18 +974,12 @@ Using the performance results for each model on the final hold out data set, the
 
 ```{r Model Fit Run Time, results="hold"}
 
-#model.names <- array(c('Log.Reg.', 'LDA', 'QDA', 'KNN','RF', 'SVM'))
-
-mfrt.glm <- (glm.time$toc-glm.time$tic) 
-mfrt.lda <- (lda.time$toc-lda.time$tic)
-mfrt.qda <- (qda.time$toc-qda.time$tic) 
-mfrt.knn <- (knn.time$toc-knn.time$tic) 
-mfrt.rf <- (rf.time$toc-rf.time$tic)
-mfrt.svm <- (svm.time$toc-svm.time$tic)
-
-#model.fit.times <- tibble("Model"=model.names,"Run Time (s)"= c(mfrt.glm, mfrt.lda,mfrt.qda, mfrt.knn,mfrt.rf, mfrt.svm))
-
-#model.fit.times
+mfrt.glm <- round((glm.time$toc-glm.time$tic), 2) 
+mfrt.lda <- round((lda.time$toc-lda.time$tic), 2)
+mfrt.qda <- round((qda.time$toc-qda.time$tic), 2) 
+mfrt.knn <- round((knn.time$toc-knn.time$tic), 2) 
+mfrt.rf <- round((rf.time$toc-rf.time$tic), 2)
+mfrt.svm <- round((svm.time$toc-svm.time$tic), 2)
 
 ```
 
@@ -927,18 +996,12 @@ mfrt.svm <- (svm.time$toc-svm.time$tic)
 
 ```{r Predict Run Time, results="hold"}
 
-#model.names <- array(c('Log.Reg.', 'LDA', 'QDA', 'KNN','RF', 'SVM'))
-
-mprt.glm <- (glm.predict.time$toc-glm.predict.time$tic) 
-mprt.lda <- (lda.predict.time$toc-lda.predict.time$tic)
-mprt.qda <- (qda.predict.time$toc-qda.predict.time$tic) 
-mprt.knn <- (knn.predict.time$toc-knn.predict.time$tic) 
-mprt.rf <- (rf.predict.time$toc-rf.predict.time$tic)
-mprt.svm <- (svm.predict.time$toc-svm.predict.time$tic)
-
-#model.predict.times <- tibble("Model"=model.names,"Run Time (s)"= c(mprt.glm, mprt.lda,mprt.qda, mprt.knn,mprt.rf, mprt.svm))
-
-#model.predict.times
+mprt.glm <- round((glm.predict.time$toc-glm.predict.time$tic), 2) 
+mprt.lda <- round((lda.predict.time$toc-lda.predict.time$tic),2)
+mprt.qda <- round((qda.predict.time$toc-qda.predict.time$tic) ,2)
+mprt.knn <- round((knn.predict.time$toc-knn.predict.time$tic) ,2)
+mprt.rf <- round((rf.predict.time$toc-rf.predict.time$tic),2)
+mprt.svm <- round((svm.predict.time$toc-svm.predict.time$tic),2)
 
 ```
 
@@ -979,6 +1042,7 @@ handling imbalanced classes
 * RMD file Formatting: https://bookdown.org/yihui/rmarkdown/documents.html 
 * Timing Code Block Execution: https://www.r-bloggers.com/2017/05/5-ways-to-measure-running-time-of-r-code/ 
 * Unlisted, unnumbered tabs: https://stackoverflow.com/questions/38062706/rmarkdown-how-to-end-tabbed-content 
+* How to override GGPlot color scheme: https://stackoverflow.com/questions/34740210/how-to-change-the-color-palette-for-ggallyggpairs/34743555
 
 # Appendix A: Analysis Methods Reference Info
 
@@ -988,7 +1052,7 @@ handling imbalanced classes
 |Tuning Parameters | | | 
 
 
-
+SVM - uses maximal margin classifier (requires classes be able to be separated by a linear decision boundary) hyperplane is selected to best separate two classes. In p-dimension space, the hyperplane is of dimension p-1. Hyperplane (2D) is defined by: β0 + β1**X1 **+ β2**X2** = 0  if value of hyperplane is > or < 0 then it is on either side of the boundary. Support vectors are used to construct the margin. Support vector classifier (soft margin classifier) is used for the non-separable case. 
 
 QUESTIONS FOR OH 
  * the auc for the FHO data should be the same as the auc for the training data right?
