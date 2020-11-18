@@ -38,12 +38,13 @@ As the final project for SYS 6018 - Data Mining, we were assigned to build model
 The US Government spent [$1.5B on Haiti disaster relief](https://www.rand.org/pubs/research_reports/RR304.html) by the end of 2010. For this project, we will assume that 5 million dollars were allocated to our team to deliver supplies to displaced individuals in the immediate aftermath. Our team has been assigned an area where 8,000 displaced people are expected to be. Anything less than a 85% delivery success rate will be considered a disaster relief failure. 90% of 8,000 people is 7,200.    
 
 |                  |          |
-|:----------------|:--------:|
+|:----------------|:--------|
 |Budget           |$5,000,000|
 |Cost per Delivery (True Positive)| -$1,000 | 
 |Cost per Mis-Delivery (False Positive)| -$500 | 
 |Cost per Missed Delivery (False Negative)| -$6,250 | 
 |Cost per True Negative| $0|
+ 
  
 ```{r, echo=FALSE, message=FALSE}
 TP_C = -1000
@@ -51,11 +52,19 @@ FP_C = -500
 FN_C = -6250
 ```
  
+ 
 * method of delivery
 * cost of resources
 * time from disaster to unsurvivable conditions 
 
-
+ sum(df_factor$Blue_Tarp_or_Not=="BT")
+[1] 2022
+ sum(df_FHO$Blue_Tarp_or_Not=="BT")
+[1] 14480
+ sum(df_factor$Blue_Tarp_or_Not=="NBT")
+[1] 61219
+ sum(df_FHO$Blue_Tarp_or_Not=="NBT")
+[1] 1989697
 
 # Data Exploration   
 
@@ -88,7 +97,7 @@ library(tictoc)
 ```
 
 ```{r }
-tic("Knit Time")
+tic("Run Time")
 ```
 
 ```{r cores, echo=FALSE, message=FALSE, results='hide'}
@@ -805,7 +814,9 @@ df_FHO
 ```
 
 
-### Logistic Regression 
+### Logistic Regression {.tabset}
+
+#### Confusion Matrix 
 
 ```{r FHO LR, results="hold"}
 tic("Log.Reg. Predict")
@@ -829,7 +840,18 @@ prec_LR_FHO <- round(cm.glm_thresh_FHO[["byClass"]][["Precision"]]*100, 2)
 
 ```
 
-### LDA 
+#### ROC 
+
+```{r}
+par(pty="s")
+glm_roc_FHO <- roc(df_FHO$Blue_Tarp_or_Not, glm.prob_FHO[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#0072B2", lwd=4, print.auc=TRUE, main="Log. Reg. FHO ROC Curve") 
+auc_LR_FHO <- round(glm_roc_FHO[["auc"]], 2)
+```
+
+
+### LDA {.tabset}
+
+#### Confusion Matrix
 
 ```{r FHO LDA, results="hold"}
 tic("LDA Predict")
@@ -844,16 +866,23 @@ lda.thresh_FHO
 cm.lda_thresh_FHO
 
 acc_lda_FHO <- round(cm.lda_thresh_FHO[["overall"]][["Accuracy"]]*100, 2)
-auc_lda_FHO <- round(lda_roc[["auc"]],2)
 thresh_lda_FHO <- lda.thresh_FHO
 sens_lda_FHO <-  round(cm.lda_thresh_FHO[["byClass"]][["Sensitivity"]]*100,2)
 spec_lda_FHO <- round(cm.lda_thresh_FHO[["byClass"]][["Specificity"]]*100,2)
 FDR_lda_FHO <- round(((cm.lda_thresh_FHO[["table"]][2,1])/(cm.lda_thresh_FHO[["table"]][2,1]+cm.lda_thresh_FHO[["table"]][2,2]))*100,2)
 prec_lda_FHO <- round(cm.lda_thresh_FHO[["byClass"]][["Precision"]]*100, 2)
 ```
+#### ROC 
 
+```{r}
+par(pty="s")
+lda_roc_FHO <- roc(df_FHO$Blue_Tarp_or_Not, lda.prob_FHO[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#0072B2", lwd=4, print.auc=TRUE, main="LDA FHO ROC Curve") 
+auc_lda_FHO <- round(lda_roc_FHO[["auc"]],2)
+```
 
-### QDA 
+### QDA {.tabset}
+
+#### Confusion Matrix 
 
 ```{r FHO qDA, results="hold"}
 tic("QDA Predict")
@@ -868,7 +897,6 @@ qda.thresh_FHO
 cm.qda_thresh_FHO
 
 acc_qda_FHO <- round(cm.qda_thresh_FHO[["overall"]][["Accuracy"]]*100,2)
-auc_qda_FHO <- round(qda_roc[["auc"]],2)
 thresh_qda_FHO <- qda.thresh_FHO
 sens_qda_FHO <-  round(cm.qda_thresh_FHO[["byClass"]][["Sensitivity"]]*100,2)
 spec_qda_FHO <- round(cm.qda_thresh_FHO[["byClass"]][["Specificity"]]*100,2)
@@ -876,7 +904,18 @@ FDR_qda_FHO <- round(((cm.qda_thresh_FHO[["table"]][2,1])/(cm.qda_thresh_FHO[["t
 prec_qda_FHO <- round(cm.qda_thresh_FHO[["byClass"]][["Precision"]]*100,2)
 ```
 
-### KNN
+#### ROC 
+
+```{r}
+par(pty="s")
+qda_roc_FHO <- roc(df_FHO$Blue_Tarp_or_Not, qda.prob_FHO[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#0072B2", lwd=4, print.auc=TRUE, main="QDA FHO ROC Curve") 
+auc_qda_FHO <- round(qda_roc_FHO[["auc"]],2)
+```
+
+
+### KNN {.tabset}
+
+#### Confusion Matrix 
 
 ```{r FHO KNN, results="hold"}
 tic("KNN Predict")
@@ -891,15 +930,23 @@ knn.thresh_FHO
 cm.knn_thresh_FHO
 
 acc_knn_FHO <- round(cm.knn_thresh_FHO[["overall"]][["Accuracy"]]*100,2)
-auc_knn_FHO <- round(knn_roc[["auc"]],2)
 thresh_knn_FHO <- knn.thresh_FHO
 sens_knn_FHO <-  round(cm.knn_thresh_FHO[["byClass"]][["Sensitivity"]]*100,2)
 spec_knn_FHO <- round(cm.knn_thresh_FHO[["byClass"]][["Specificity"]]*100,2)
 FDR_knn_FHO <- round(((cm.knn_thresh_FHO[["table"]][2,1])/(cm.knn_thresh_FHO[["table"]][2,1]+cm.knn_thresh_FHO[["table"]][2,2]))*100,2)
 prec_knn_FHO <- round(cm.knn_thresh_FHO[["byClass"]][["Precision"]]*100,2)
 ```
+#### ROC 
 
-### RF 
+```{r}
+par(pty="s")
+knn_roc_FHO <- roc(df_FHO$Blue_Tarp_or_Not, knn.prob_FHO[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#0072B2", lwd=4, print.auc=TRUE, main="KNN FHO ROC Curve") 
+auc_knn_FHO <- round(knn_roc_FHO[["auc"]],2)
+```
+
+### RF {.tabset}
+
+#### COnfusion Matrix 
 
 ```{r FHO RF, results="hold"}
 tic("RF Predict")
@@ -914,7 +961,6 @@ RF.thresh_FHO
 cm.RF_thresh_FHO
 
 acc_RF_FHO <- round(cm.RF_thresh_FHO[["overall"]][["Accuracy"]]*100,2)
-auc_RF_FHO <- round(RF_roc[["auc"]],2)
 thresh_RF_FHO <- RF.thresh
 sens_RF_FHO <-  round(cm.RF_thresh_FHO[["byClass"]][["Sensitivity"]]*100,2)
 spec_RF_FHO <- round(cm.RF_thresh_FHO[["byClass"]][["Specificity"]]*100,2)
@@ -922,7 +968,17 @@ FDR_RF_FHO <- round(((cm.RF_thresh_FHO[["table"]][2,1])/(cm.RF_thresh_FHO[["tabl
 prec_RF_FHO <- round(cm.RF_thresh_FHO[["byClass"]][["Precision"]]*100,2)
 ```
 
-### SVM 
+#### ROC 
+
+```{r}
+par(pty="s")
+rf_roc_FHO <- roc(df_FHO$Blue_Tarp_or_Not, RF.prob_FHO[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#0072B2", lwd=4, print.auc=TRUE, main="RF FHO ROC Curve") 
+auc_RF_FHO <- round(rf_roc_FHO[["auc"]],2)
+```
+
+### SVM {.tabset}
+
+#### Confusion Matrix 
 
 ```{r FHO SVM, results="hold"}
 tic("SVM Predict")
@@ -937,7 +993,6 @@ SVM.thresh_FHO
 cm.SVM_thresh_FHO
 
 acc_SVM_FHO <- round(cm.SVM_thresh_FHO[["overall"]][["Accuracy"]]*100,2)
-auc_SVM_FHO <- round(SVM_roc[["auc"]],2)
 thresh_SVM_FHO <- SVM.thresh
 sens_SVM_FHO <-  round(cm.SVM_thresh_FHO[["byClass"]][["Sensitivity"]]*100,2)
 spec_SVM_FHO <- round(cm.SVM_thresh_FHO[["byClass"]][["Specificity"]]*100,2)
@@ -945,13 +1000,22 @@ FDR_SVM_FHO <- round(((cm.SVM_thresh_FHO[["table"]][2,1])/(cm.SVM_thresh_FHO[["t
 prec_SVM_FHO <- round(cm.SVM_thresh_FHO[["byClass"]][["Precision"]]*100,2)
 ```
 
+#### ROC 
+
+```{r}
+par(pty="s")
+svm_roc_FHO <- roc(df_FHO$Blue_Tarp_or_Not, SVM.prob_FHO[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#0072B2", lwd=4, print.auc=TRUE, main="SVM FHO ROC Curve") 
+auc_SVM_FHO <- round(svm_roc_FHO[["auc"]],2)
+```
+
+
 ```{r, echo=FALSE}
 parallel::stopCluster(cl)
 ```
 
-### Table 3 - FHO Performance Summary 
-
 ## {.unlisted .unnumbered} 
+
+### Table 3 - FHO Performance Summary 
 
 #### **Performance Metrics: Hold-Out Test Data Set Scores**  
 
@@ -1014,7 +1078,14 @@ mprt.svm <- round((svm.predict.time$toc-svm.predict.time$tic),2)
 |RF | `r mprt.rf`|
 |SVM | `r mprt.svm`|
 
-Run time varaition between devices, qualitative measure only. 
+Run time variation between devices, qualitative measure only. Just make note of computer specs 
+
+**Computer Specs. **
+
+* OS: Windows 
+* Processor:	Intel(R) Core(TM) i7-10875H CPU @ 2.30GHz, 2304 Mhz, 8 Core(s), 16 Logical Processor(s)
+* RAM:	32.0 GB
+
 
 (discussion on FHO data why we do this... what the benefits are... potential pitfalls)
 
