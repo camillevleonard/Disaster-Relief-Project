@@ -35,36 +35,21 @@ As the final project for SYS 6018 - Data Mining, we were assigned to build model
 
 # Project Budget
 
-The US Government spent [$1.5B on Haiti disaster relief](https://www.rand.org/pubs/research_reports/RR304.html) by the end of 2010. For this project, we will assume that 5 million dollars were allocated to our team to deliver supplies to displaced individuals in the immediate aftermath. Our team has been assigned an area where 8,000 displaced people are expected to be. Anything less than a 85% delivery success rate will be considered a disaster relief failure. 90% of 8,000 people is 7,200.    
+The US Government spent [$1.5B on Haiti disaster relief](https://www.rand.org/pubs/research_reports/RR304.html) by the end of 2010. For this project, we will assume that $2,000,000 was allocated to our team to deliver supplies to displaced individuals in the immediate aftermath. Our team has been assigned an area where 2,022 displaced people are believed to be (this is the number of blue tarps are in our training data set). Anything less than a 80% delivery success rate will be considered a disaster relief failure. 80% of 2,022 people is 1,618.    
 
-|                  |          |
-|:----------------|:--------|
-|Budget           |$5,000,000|
-|Cost per Delivery (True Positive)| -$1,000 | 
-|Cost per Mis-Delivery (False Positive)| -$500 | 
-|Cost per Missed Delivery (False Negative)| -$6,250 | 
-|Cost per True Negative| $0|
+|                                          |           |
+|:-----------------------------------------|:----------|
+|Budget                                    |  $750,000 |
+|Cost per Delivery (True Positive)         | -$750     | 
+|Cost per Mis-Delivery (False Positive)    | -$300     | 
+|Cost per Missed  Delivery (False Negative) | -$3,713  |
  
  
 ```{r, echo=FALSE, message=FALSE}
-TP_C = -1000
-FP_C = -500
-FN_C = -6250
+TP_C = -750
+FP_C = -300
+FN_C = -4946
 ```
- 
- 
-* method of delivery
-* cost of resources
-* time from disaster to unsurvivable conditions 
-
- sum(df_factor$Blue_Tarp_or_Not=="BT")
-[1] 2022
- sum(df_FHO$Blue_Tarp_or_Not=="BT")
-[1] 14480
- sum(df_factor$Blue_Tarp_or_Not=="NBT")
-[1] 61219
- sum(df_FHO$Blue_Tarp_or_Not=="NBT")
-[1] 1989697
 
 # Data Exploration   
 
@@ -232,7 +217,7 @@ df_subset <- df_factor[trainIndex,]
 
 ## Logistic Regression {.tabset }
 
-Fit a Logistic Regression Model ....
+Logistic regression is classification technique, which, for our purposes, will be used to perform binary classification. Our logistic regression model calculates the probability that an observation is a blue tarp. The method of maximum likelihood is used to calculate the probabilities. Whether these probabilities are classified as a blue tarp or not a blue tarp is dependent on the threshold value chosen. A probability above the threshold value is assigned a blue tarp label and a probability below the threshold is assigned a not blue tarp label. 
 
 ### Model 
 
@@ -261,7 +246,10 @@ summary(glm.fit)
 
 ### ROC
 
-Test model performance on Train data to select threshold values... 
+The receiver operating characteristic or [ROC](https://en.wikipedia.org/wiki/Receiver_operating_characteristic) is a graphic which illustrates the true positive percentage and the false positive percentage produced by the fit model at different threshold values. Generally, we seek to maximize the true positive rate (TPR) and minimize the false positive rate (FPR). For this project, are interested in maximizing the TPR and minimizing the FPR. However, because we are creating models that will assist in saving lives we are very concerned with the false negative rate. We want to avoid missed blue tarps as best we can with the budget we're allowed. Due to the imbalance in the ratio of our BT and NBT observations, we must be concerned with the FPs (NBTs flagged as BTs) depleting our available resources before we are able to find all the blue tarps (TP). 
+
+The area under the curve or [AUC](https://towardsdatascience.com/understanding-auc-roc-curve-68b2303cc9c5) is a metric that indicates how well a model can differentiate between two classes.The higher the AUC the better the model is a predicting class labels correctly.    
+
 ```{r Log Reg pred,  results="hold"}
 #pass
 glm.prob <- predict(glm.fit, newdata=df_factor , type = "prob") #returns df with col 0 (prob not blue tarp) and 1 (prob blue tarp)
@@ -270,6 +258,8 @@ glm_roc <- roc(df_factor $Blue_Tarp_or_Not, glm.prob[,2], plot=TRUE, legacy.axes
 ```
 
 ### Thresholds
+
+It can be difficult to determine what threshold to choose for your model from just an ROC curve alone. To aid in threshold selection I decided to graph the TPR, FPR, and threshold  in a 3-D scatterplot. As you can see from the interactive graphic below,  it's much easier to determine which threshold to choose to give you the model performance  that is appropriate for your application. In our case, our threshold selection is guided by the aim of maximizing the TPR while minimizing the FPR and ensuring that our operation does not exceed or exhaust our budget by pursuing incorrectly labeled not blue tarps (false positives). A threshold of `r lr.thresh` was selected for this model. 
 
 ```{r LR Thresholds,  results="hold"}
 roc.info_glm <- roc(df_factor$Blue_Tarp_or_Not, glm.prob[,2], legacy.axes=TRUE)
@@ -287,33 +277,12 @@ fig2 <- fig2 %>% layout(scene=list(xaxis=list(title="True Positive Rate"),
 fig2
 ```
 
-```{r decisions, eval=FALSE}
-
-Confusion_Matrix <- set_names(seq(0.01,0.99,0.01)) %>% 
-  map( ~ Blue_Tarp_or_Not(factor(ifelse(synth_dat$p>=.x,'T','F')), factor(synth_dat$y)))
-
-Cost_Benefit_Matrix <- matrix(c(0,-5000,-300,-1000), nrow=2, ncol=2, byrow=TRUE)
-  
-Cost <- Confusion_Matrix %>%
-  map( ~ sum(.x * Cost_Benefit_Matrix))
-
-Cost_actual <- Confusion_Matrix %>%
-  map( ~ sum((.x*Cost_Benefit_Matrix)[2,]))
-
-tibble(threshold=as.numeric(names(Cost)), 
-       cost=unlist(Cost), cost_actual=unlist(Cost_actual)) %>%
-  ggplot() + geom_line(aes(x=threshold, y=cost, color='perceived'), size=3) +
-  geom_line(aes(x=threshold, y=cost_actual, color='actual'), 
-            size=2, linetype='dotted') +
-  ylim(c(-4000000,0)) + scale_fill_manual(values=c('forestgreen','purple')) +
-  geom_abline(slope=0, intercept=-2000000)
-```
-
-
 ### Confusion Matrix
 
+The [confusion matrix](https://en.wikipedia.org/wiki/Confusion_matrix) displays the true negatives, false negatives, false positives, and true positives giving a sense of the performance of a model. These values are used to calculate metrics which are commonly used to compare the performance of models such as the TPR (also known as sensitivity or recall), FPR, FNR, true negative rate (specificity), precision, and many more.  
+
 ```{r Log Reg Confusion Matrix,  results="hold"}
-lr.thresh <- 0.003
+lr.thresh <- 0.03265
 glm.pred_thresh <- factor(ifelse(glm.prob[,2]>lr.thresh,"BT", "NBT"), levels=c("NBT", "BT"))
 cm.glm_thresh <- confusionMatrix(factor(glm.pred_thresh),df_factor $Blue_Tarp_or_Not, positive = "BT") 
 "Threshold:"
@@ -327,11 +296,17 @@ sens_LR <-  cm.glm_thresh[["byClass"]][["Sensitivity"]]*100
 spec_LR <- cm.glm_thresh[["byClass"]][["Specificity"]]*100
 FDR_LR <- ((cm.glm_thresh[["table"]][2,1])/(cm.glm_thresh[["table"]][2,1]+cm.glm_thresh[["table"]][2,2]))*100
 prec_LR <- cm.glm_thresh[["byClass"]][["Precision"]]*100
+F.glm <- round(2*((prec_LR*sens_LR)/(prec_LR+sens_LR))/100, 2)
 
 cost.glm <- cm.glm_thresh[["table"]][1]*0 + cm.glm_thresh[["table"]][2]*FP_C + cm.glm_thresh[["table"]][3]*FN_C + cm.glm_thresh[["table"]][4]*TP_C
 cost.glm
 ```
+
 ### Sampling Variability 
+
+Understanding the confidence of the model you've created is critical to understanding how well your model will perform when given a new data set with a different values. How much variability can you expect from your model? Based on the k folds accuracy performance, which exhibits variation in the thousands place, we can have confidence in the model performing as expected even when there is some variation in the data.  
+
+The average accuracy across ten folds is `r round(acc_LR, 2)` with a standard deviation of `r round(glm.sd, 3)`. 
 
 ```{r LR Sampling Variablity,  results="hold" }
 "10 Fold Results"
@@ -339,11 +314,19 @@ glm.fit$resample #point est +/- std from 10 folds "variation in the third decima
 glm.sd <- sd(glm.fit[["resample"]][["Accuracy"]]*100)
 #plot(glm.fit[["resample"]][["Accuracy"]], main="Accuracy per Fold", xlab= "Fold Number", ylab="Accuracy")
 ```
-The average accuracy across ten folds is `r round(acc_LR, 2)` with a standard deviation of `r round(glm.sd, 3)`.  
+ 
 
 ## LDA {.tabset }
 
 ### Model
+
+Linear discriminant analysis or (LDA) is another classification technique that models the distribution of the predictors for each class separately uses a linear decision boundary to 
+
+From ISLR, reasons to consider the use of LDA include:
+
+* When the classes are well-separated, the parameter estimates for the logistic regression model are surprisingly unstable. Linear discriminant analysis does not suffer from this problem.
+* If n is small and the distribution of the predictors X is approximately normal in each of the classes, the linear discriminant model is again more stable than the logistic regression model.
+* Linear discriminant analysis is popular when we have more than two response classes.
 
 ```{r LDA,  results="hold"}
 #pass
@@ -393,7 +376,7 @@ fig3
 ### Confusion Matrix 
 
 ```{r LDA Confusion Matrix,  results="hold"}
-lda.thresh <- 0.0008
+lda.thresh <- 0.01
 
 lda.pred_thresh <- factor(ifelse(lda.prob[,2]>lda.thresh,"BT", "NBT"), levels=c("NBT", "BT"))
 cm.lda_thresh <- confusionMatrix(factor(lda.pred_thresh),df_factor$Blue_Tarp_or_Not, positive = "BT") 
@@ -408,10 +391,12 @@ sens_lda <-  cm.lda_thresh[["byClass"]][["Sensitivity"]]*100
 spec_lda <- cm.lda_thresh[["byClass"]][["Specificity"]]*100
 FDR_lda <- ((cm.lda_thresh[["table"]][2,1])/(cm.lda_thresh[["table"]][2,1]+cm.lda_thresh[["table"]][2,2]))*100
 prec_lda <- cm.lda_thresh[["byClass"]][["Precision"]]*100
+F.lda <- round(2*((prec_lda*sens_lda)/(prec_lda+sens_lda))/100, 2)
 
 cost.lda <- cm.lda_thresh[["table"]][1]*0 + cm.lda_thresh[["table"]][2]*FP_C + cm.lda_thresh[["table"]][3]*FN_C + cm.lda_thresh[["table"]][4]*TP_C
 cost.lda
 ```
+Based on the performance of the LDA model, I was unable to find a threshold that satisfied the budget. Therefore, I chose a threshold that minimized cost and number of false negatives. 
 
 ### Sampling Variability 
 
@@ -474,7 +459,7 @@ fig4
 ### Confusion Matrix 
 
 ```{r QDA Confusion Matrix,  results="hold"}
-qda.thresh <- 0.0016
+qda.thresh <- 0.02
 qda.pred_thresh <- factor(ifelse(qda.prob[,2]>qda.thresh,"BT", "NBT"), levels=c("NBT", "BT"))
 cm.qda_thresh <- confusionMatrix(factor(qda.pred_thresh),df_factor $Blue_Tarp_or_Not, positive = "BT") 
 "Threshold:"
@@ -488,6 +473,7 @@ sens_qda <-  cm.qda_thresh[["byClass"]][["Sensitivity"]]*100
 spec_qda <- cm.qda_thresh[["byClass"]][["Specificity"]]*100
 FDR_qda <- ((cm.qda_thresh[["table"]][2,1])/(cm.qda_thresh[["table"]][2,1]+cm.qda_thresh[["table"]][2,2]))*100
 prec_qda <- cm.qda_thresh[["byClass"]][["Precision"]]*100
+F.qda <- round(2*((prec_qda*sens_qda)/(prec_qda+sens_qda))/100,2)
 
 cost.qda <- cm.qda_thresh[["table"]][1]*0 + cm.qda_thresh[["table"]][2]*FP_C + cm.qda_thresh[["table"]][3]*FN_C + cm.qda_thresh[["table"]][4]*TP_C
 cost.qda
@@ -565,7 +551,7 @@ fig5
 ### Confusion Matrix 
 
 ```{r KNN Confusion Matrix,  results="hold"}
-knn.thresh <- 0.035
+knn.thresh <- 0.07
 knn.pred_thresh <- factor(ifelse(knn.prob[,2]>knn.thresh,"BT", "NBT"), levels=c("NBT", "BT"))
 cm.knn_thresh <- confusionMatrix(factor(knn.pred_thresh),df_factor $Blue_Tarp_or_Not, positive = "BT") 
 "Threshold:"
@@ -580,6 +566,7 @@ spec_knn <- cm.knn_thresh[["byClass"]][["Specificity"]]*100
 FDR_knn <- ((cm.knn_thresh[["table"]][2,1])/(cm.knn_thresh[["table"]][2,1]+cm.knn_thresh[["table"]][2,2]))*100
 prec_knn <- cm.knn_thresh[["byClass"]][["Precision"]]*100
 k_knn <- knn.fit[["bestTune"]][["k"]]
+F.knn <- round(2*((prec_knn*sens_knn)/(prec_knn+sens_knn))/100,2)
 
 cost.knn <- cm.knn_thresh[["table"]][1]*0 + cm.knn_thresh[["table"]][2]*FP_C + cm.knn_thresh[["table"]][3]*FN_C + cm.knn_thresh[["table"]][4]*TP_C
 cost.knn
@@ -654,7 +641,7 @@ fig6
 ### Confusion Matrix 
 
 ```{r RF Confusion Matrix,  results="hold"}
-RF.thresh <- 0.45
+RF.thresh <- 0.36
 RF.pred_thresh <- factor(ifelse(RF.prob[,2]>RF.thresh,"BT", "NBT"), levels=c("NBT", "BT"))
 cm.RF_thresh <- confusionMatrix(factor(RF.pred_thresh),df_factor $Blue_Tarp_or_Not, positive = "BT") 
 "Threshold:"
@@ -670,6 +657,7 @@ FDR_RF <- ((cm.RF_thresh[["table"]][2,1])/(cm.RF_thresh[["table"]][2,1]+cm.RF_th
 prec_RF <- cm.RF_thresh[["byClass"]][["Precision"]]*100
 mtry_best <- rf.fit[["bestTune"]][["mtry"]]
 ntree <- rf.fit[["finalModel"]][["ntree"]]
+F.rf <- round(2*((prec_RF*sens_RF)/(prec_RF+sens_RF))/100,2)
 
 cost.RF <- cm.RF_thresh[["table"]][1]*0 + cm.RF_thresh[["table"]][2]*FP_C + cm.RF_thresh[["table"]][3]*FN_C + cm.RF_thresh[["table"]][4]*TP_C
 cost.RF
@@ -752,7 +740,7 @@ fig7
 ### Confusion Matrix 
 
 ```{r SVM Confusion Matrix,  results="hold"}
-SVM.thresh <- 0.0017
+SVM.thresh <- 0.0048
 SVM.pred_thresh <- factor(ifelse(SVM.prob[,2]>SVM.thresh,"BT", "NBT"), levels=c("NBT", "BT"))
 cm.SVM_thresh <- confusionMatrix(factor(SVM.pred_thresh),df_factor $Blue_Tarp_or_Not, positive = "BT") 
 "Threshold:"
@@ -768,6 +756,7 @@ FDR_SVM <- ((cm.SVM_thresh[["table"]][2,1])/(cm.SVM_thresh[["table"]][2,1]+cm.SV
 prec_SVM <- cm.SVM_thresh[["byClass"]][["Precision"]]*100
 sigma_best <- round(svm.radial.fit[["bestTune"]][["sigma"]], 4)
 C_best <- svm.radial.fit[["bestTune"]][["C"]]
+F.svm <- round(2*((prec_SVM*sens_SVM)/(prec_SVM+sens_SVM))/100,2)
 
 cost.SVM <- cm.SVM_thresh[["table"]][1]*0 + cm.SVM_thresh[["table"]][2]*FP_C + cm.SVM_thresh[["table"]][3]*FN_C + cm.SVM_thresh[["table"]][4]*TP_C
 cost.SVM
@@ -790,29 +779,29 @@ The average accuracy across ten folds is `r round(acc_SVM, 2)` with a standard d
 #### **Performance Metrics: 10-Fold Cross-Validation Metrics**
 
 |      Method | KNN (k = `r k_knn`) |    LDA    |    QDA    | Log. Regression | Random Forest (mtry = `r mtry_best`, nTrees = `r ntree`) | SVM (sigma = `r sigma_best`, C = `r C_best`)|
-|------------:|:----------------:|:---------:|:---------:|:---------------:|:--------------:|:--------------:|
+|------------:|:-----------------:|:-----------:|:-----------:|:---------------:|:----------------:|:----------------:|
 |    Accuracy | `r round(acc_knn,2)`%   | `r round(acc_lda,2)`%   | `r round(acc_qda,2)`%   | `r round(acc_LR,2)`%  | `r round(acc_RF,2)`%| `r round(acc_SVM,2)`%   |
 |         AUC | `r round(auc_knn,2)`%   | `r round(auc_lda,2)`%   | `r round(auc_qda,2)`%   | `r round(auc_LR,2)`%  | `r round(auc_RF,2)`%| `r round(auc_SVM,2)`%   |
-|         ROC |                         |                         |                         |                       |                    |                        |
+|         ROC |                         |                         |                         |                       |                     |                         |
 |   Threshold | `r round(thresh_knn,5)` | `r round(thresh_lda,5)` | `r round(thresh_qda,5)` | `r round(thresh_LR,5)`| `r round(thresh_RF,5)`|`r round(thresh_SVM,5)`|
 | Sensitivity | `r round(sens_knn,2)`%  | `r round(sens_lda,2)`%  | `r round(sens_qda,2)`%  | `r round(sens_LR,2)`% |`r round(sens_RF,2)`%| `r round(sens_SVM,2)`%  |
 | Specificity | `r round(spec_knn,2)`%  | `r round(spec_lda,2)`%  | `r round(spec_qda,2)`%  | `r round(spec_LR,2)`% |`r round(spec_RF,2)`%|`r round(spec_SVM,2)`%   |
 |         FDR | `r round(FDR_knn,2)`%   | `r round(FDR_lda,2)`%   | `r round(FDR_qda,2)`%   | `r round(FDR_LR,2)`%  | `r round(FDR_RF,2)`%|`r round(FDR_SVM,2)`%    |
 |   Precision | `r round(prec_knn,2)`%  | `r round(prec_lda,2)`%  | `r round(prec_qda,2)`%  | `r round(prec_LR,2)`% |`r round(prec_RF,2)`%| `r round(prec_SVM,2)`%  |
-|        Cost | ` r cost.knn`           | ` r cost.lda`           | `r cost.qda`            | ` r cost.glm`         | ` r cost.RF `       | ` r cost.SVM`
+|        Cost | `r round(cost.knn,2)`   | `r round(cost.lda,2)`   | `r round(cost.qda,2)`   | `r round(cost.glm,2)` | `r round(cost.RF,2) ` | `r round(cost.SVM)`   |
+|     F Score | `r F.knn`               | `r F.lda`               | `r F.qda`               | `r F.glm`             | `r F.rf`            | `r F.svm`               |             
 
-Model performance based on running training data through the fitted model. ~**Make some comments here about variation between folds**~ 
+Model performance based on running training data through the fitted model. **Make some comments here about variation between folds** 
 
 # Model Performance 
 
-## Hold-Out Test Sample Performance {.tabset}
+## Hold-Out Test Sample {.tabset}
 
 ```{r Load FHO Data}
 df_FHO <- tibble(read.csv("SYS6018_FHO_Data.csv"))
 df_FHO$Blue_Tarp_or_Not <- factor(df_FHO$Blue_Tarp_or_Not, labels = c("NBT", "BT"))
 df_FHO
 ```
-
 
 ### Logistic Regression {.tabset}
 
@@ -1091,9 +1080,16 @@ Run time variation between devices, qualitative measure only. Just make note of 
 
 (discussion somewhere about ROC curves AUC and... other metrics)
 
-handling imbalanced classes 
 
 # Conclusions 
+
+1. A discussion of the best performing algorithm(s) in the cross-validation and hold-out data
+
+2. A discussion or analysis justifying why your findings above are compatible or reconcilable
+
+3. A recommendation and rationale regarding which algorithm to use for detection of blue tarps
+
+4. A discussion of the relevance of the metrics calculated in the tables to this application context
 
 # Future Work 
 
@@ -1101,10 +1097,14 @@ handling imbalanced classes
 #consider if I was able to find an additional data source like lidar or infrared to pair with this dataset to improve model performance... ? 
 ```
 
+# Acknowledgements
+
+A sincere thank you to Professor Schwartz and his excellent instruction this semester. In addition, I'm very grateful to my cohort. They inspired much of my learning and helped to reinforce the rest. 
+
 # References and Works Cited 
 
-* [1] Creating and using color blindness friendly color pallets: http://www.cookbook-r.com/Graphs/Colors_(ggplot2)/#a-colorblind-friendly-palette 
-* Thanks to Derek Banks for sharing code for doing multicore processing
+* Creating and using color blindness friendly color pallets: http://www.cookbook-r.com/Graphs/Colors_(ggplot2)/#a-colorblind-friendly-palette 
+* Thanks to Derek Banks and Michael Davies for sharing code for doing multicore processing
 * Assigning color to ggplot scatter: https://www.r-graph-gallery.com/ggplot2-color.html
 * Change correlation text size ggpairs : https://stackoverflow.com/questions/8599685/how-to-change-correlation-text-size-in-ggpairs
 * Information on RGB color model: https://en.wikipedia.org/wiki/RGB_color_model
@@ -1114,6 +1114,9 @@ handling imbalanced classes
 * Timing Code Block Execution: https://www.r-bloggers.com/2017/05/5-ways-to-measure-running-time-of-r-code/ 
 * Unlisted, unnumbered tabs: https://stackoverflow.com/questions/38062706/rmarkdown-how-to-end-tabbed-content 
 * How to override GGPlot color scheme: https://stackoverflow.com/questions/34740210/how-to-change-the-color-palette-for-ggallyggpairs/34743555
+* F Score: https://en.wikipedia.org/wiki/F-score
+* Confusion Matrices: https://en.wikipedia.org/wiki/Confusion_matrix 
+* An Introduction to Statistical Learning by G. James, D. Witten, T. Hastie, and R. Tibshirani 
 
 # Appendix A: Analysis Methods Reference Info
 
@@ -1125,8 +1128,6 @@ handling imbalanced classes
 
 SVM - uses maximal margin classifier (requires classes be able to be separated by a linear decision boundary) hyperplane is selected to best separate two classes. In p-dimension space, the hyperplane is of dimension p-1. Hyperplane (2D) is defined by: β0 + β1**X1 **+ β2**X2** = 0  if value of hyperplane is > or < 0 then it is on either side of the boundary. Support vectors are used to construct the margin. Support vector classifier (soft margin classifier) is used for the non-separable case. 
 
-QUESTIONS FOR OH 
- * the auc for the FHO data should be the same as the auc for the training data right?
  
 ```{r, echo=FALSE}
 toc()
