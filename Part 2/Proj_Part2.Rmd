@@ -259,7 +259,7 @@ glm_roc <- roc(df_factor $Blue_Tarp_or_Not, glm.prob[,2], plot=TRUE, legacy.axes
 
 ### Thresholds
 
-It can be difficult to determine what threshold to choose for your model from just an ROC curve alone. To aid in threshold selection I decided to graph the TPR, FPR, and threshold  in a 3-D scatterplot. As you can see from the interactive graphic below,  it's much easier to determine which threshold to choose to give you the model performance  that is appropriate for your application. In our case, our threshold selection is guided by the aim of maximizing the TPR while minimizing the FPR and ensuring that our operation does not exceed or exhaust our budget by pursuing incorrectly labeled not blue tarps (false positives). A threshold of `r lr.thresh` was selected for this model. 
+It can be difficult to determine what threshold to choose for your model from just an ROC curve alone. To aid in threshold selection I decided to graph the TPR, FPR, and threshold  in a 3-D scatterplot. As you can see from the interactive graphic below,  it's much easier to determine which threshold to choose to give you the model performance  that is appropriate for your application. In our case, our threshold selection is guided by the aim of maximizing the TPR while minimizing the FPR and ensuring that our operation does not exceed or exhaust our budget by pursuing incorrectly labeled not blue tarps (false positives). 
 
 ```{r LR Thresholds,  results="hold"}
 roc.info_glm <- roc(df_factor$Blue_Tarp_or_Not, glm.prob[,2], legacy.axes=TRUE)
@@ -302,11 +302,11 @@ cost.glm <- cm.glm_thresh[["table"]][1]*0 + cm.glm_thresh[["table"]][2]*FP_C + c
 cost.glm
 ```
 
+A threshold of `r lr.thresh` was selected for this model. 
+
 ### Sampling Variability 
 
 Understanding the confidence of the model you've created is critical to understanding how well your model will perform when given a new data set with a different values. How much variability can you expect from your model? Based on the k folds accuracy performance, which exhibits variation in the thousands place, we can have confidence in the model performing as expected even when there is some variation in the data.  
-
-The average accuracy across ten folds is `r round(acc_LR, 2)` with a standard deviation of `r round(glm.sd, 3)`. 
 
 ```{r LR Sampling Variablity,  results="hold" }
 "10 Fold Results"
@@ -314,19 +314,13 @@ glm.fit$resample #point est +/- std from 10 folds "variation in the third decima
 glm.sd <- sd(glm.fit[["resample"]][["Accuracy"]]*100)
 #plot(glm.fit[["resample"]][["Accuracy"]], main="Accuracy per Fold", xlab= "Fold Number", ylab="Accuracy")
 ```
- 
+ The average accuracy across ten folds is `r round(acc_LR, 2)` with a standard deviation of `r round(glm.sd, 3)`. 
 
 ## LDA {.tabset }
 
 ### Model
 
-Linear discriminant analysis or (LDA) is another classification technique that models the distribution of the predictors for each class separately uses a linear decision boundary to 
-
-From ISLR, reasons to consider the use of LDA include:
-
-* When the classes are well-separated, the parameter estimates for the logistic regression model are surprisingly unstable. Linear discriminant analysis does not suffer from this problem.
-* If n is small and the distribution of the predictors X is approximately normal in each of the classes, the linear discriminant model is again more stable than the logistic regression model.
-* Linear discriminant analysis is popular when we have more than two response classes.
+LDA is a classification method that uses the maximum likelihood method to classify obesrvations. LDA assumes each class has a normal distribution and that every covariance is the same.This creates a linear separation boundary between classes. The observation is assigned to the class with the highest calculated likelihood. Caret automatically does the calculation to convert the likelihood to a probability, which is what we use in conjunction with our chosen threshold to classify our data.  
 
 ```{r LDA,  results="hold"}
 #pass
@@ -411,6 +405,10 @@ The average accuracy across ten folds is `r round(acc_lda, 2)` with a standard d
 
 ### Model
 
+QDA is a classification method that uses the maximum likelihood method to classify observations. QDA assumes each class has a normal distribution. Each class has its own mean and covariance. The observation is assigned to the class with the highest calculated likelihood. Caret automatically does the calculation to convert the likelihood to a probability, which is what we use in conjunction with our chosen threshold to classify our data.
+
+The decision boundary created by QDA is quadratic and allows for different covariances for the classes. Therefore, you will see better performance of a QDA model compared to a LDA model when the boundary between classes of data is non-linear and the classes have different covariance values. 
+
 ```{r QDA,  results="hold"}
 #pass
 fitControl <- trainControl(method = "cv",
@@ -492,6 +490,8 @@ The average accuracy across ten folds is `r round(acc_qda, 2)` with a standard d
 ## KNN {.tabset }
 
 ### Model 
+
+K nearest neighbors is a modeling method that calculates the probability an observation belongs to one class or another based on the class of its k nearest neighbors (observations closest in data space to the observation we're trying to classify) are assigned to. K values of 5 or 10 are often chosen to avoid too much bias (happens when k is too big) and too much variance (happens when K is too small). 
 
 ```{r KNN,  results="hold"}
 #pass
@@ -586,6 +586,9 @@ The average accuracy across ten folds when k = `r k_knn` is `r round(acc_knn, 2)
 
 ### Model 
 
+Random forest is a classification method that uses a large number of averaged decorrelated decision trees to assign a class to an observation. Decorrelation is accomplished by limiting the number of predictors the trees may use to split the data. To assign a class to a new observation, the observation is classified by all the trees in the model and assigned a final classification based on which class the largest number of trees assigned to that observation. 
+
+
 ```{r Random Forest,  results="hold"}
 #pass
 fitControl <- trainControl(method = "cv",
@@ -599,7 +602,7 @@ tic("RF")
 rf.fit <- train(Blue_Tarp_or_Not~Red+Green+Blue,
                     data = df_factor,
                     preProcess=c("center","scale"),
-                    method="rf", #what is the difference between the different caret rf models??
+                    method="rf", 
                     trControl= fitControl,
                     tuneLength=3
                     )
@@ -1079,6 +1082,16 @@ Run time variation between devices, qualitative measure only. Just make note of 
 (discussion on FHO data why we do this... what the benefits are... potential pitfalls)
 
 (discussion somewhere about ROC curves AUC and... other metrics)
+
+Linear discriminant analysis or (LDA) is another classification technique that models the distribution of the predictors for each class separately uses a linear decision boundary to 
+
+From ISLR, reasons to consider the use of LDA include:
+
+* When the classes are well-separated, the parameter estimates for the logistic regression model are surprisingly unstable. Linear discriminant analysis does not suffer from this problem.
+* If n is small and the distribution of the predictors X is approximately normal in each of the classes, the linear discriminant model is again more stable than the logistic regression model.
+* Linear discriminant analysis is popular when we have more than two response classes.
+
+Does the method need to reference the full data set in order to make predictions?
 
 
 # Conclusions 
