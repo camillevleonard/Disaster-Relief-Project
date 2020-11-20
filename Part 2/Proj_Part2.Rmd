@@ -214,13 +214,33 @@ df_subset <- df_factor[trainIndex,]
 
 # Model Fitting
 
+A few general notes on the various metrics and considerations that will be explored for each model.
+
+**ROC**
+
+The receiver operating characteristic or [ROC](https://en.wikipedia.org/wiki/Receiver_operating_characteristic) is a graphic which illustrates the true positive percentage and the false positive percentage produced by the fit model at different threshold values. Generally, we seek to maximize the true positive rate (TPR) and minimize the false positive rate (FPR). For this project, are interested in maximizing the TPR and minimizing the FPR. However, because we are creating models that will assist in saving lives we are very concerned with the false negative rate. We want to avoid missed blue tarps, as best we can with the budget we're allowed. Due to the imbalance in the ratio of our BT and NBT observations, we must be concerned with the FPs (NBTs flagged as BTs) depleting our available resources before we are able to find all the blue tarps (TP). 
+
+**AUC** 
+
+The area under the curve or [AUC](https://towardsdatascience.com/understanding-auc-roc-curve-68b2303cc9c5) is a metric that indicates how well a model can differentiate between two classes.The higher the AUC the better the model is at predicting class labels correctly.  
+
+**Thresholds** 
+
+It can be difficult to determine what threshold to choose for your model from just an ROC curve alone. To aid in threshold selection I decided to graph the TPR, FPR, and threshold  in a 3-D scatterplot. As you will see from the interactive graphics, it's much easier to determine which threshold will give you the model performance that is appropriate for your application. In our case, our threshold selection is guided by the aim of maximizing the TPR while minimizing the FPR and ensuring that our operation does not exhaust our budget by pursuing incorrectly labeled not blue tarps (false positives) before we reach our success criterion.  
+
+**Confusion Matrix**
+
+The [confusion matrix](https://en.wikipedia.org/wiki/Confusion_matrix) displays the true negatives, false negatives, false positives, and true positives giving a sense of the performance of a model. These values are used to calculate metrics which are commonly used to compare the performance of models such as the TPR (also known as sensitivity or recall), FPR, FNR, true negative rate (specificity), precision, and many more. 
+
+**Sampling Variability**
+
+Understanding the confidence of the model you've created is critical to understanding how well your model will perform when given a new data set with a different values. How much variability can you expect from your model?  
+
 ## Logistic Regression {.tabset }
 
 Logistic regression is classification technique, which, for our purposes, will be used to perform binary classification. Our logistic regression model calculates the probability that an observation is a blue tarp. The method of maximum likelihood is used to calculate the log likelihood for a prediction which is converted to a probability. Whether these probabilities are classified as a blue tarp or not a blue tarp is dependent on the threshold value chosen. A probability above the threshold value is assigned a blue tarp label and a probability below the threshold is assigned a not blue tarp label. 
 
 ### Model 
-
-The model fit summary output indicates that the three predictors all have significant p-values, meaning that they all are contributing to the model. The accuracy output indicates that over ten folds the average accuracy was 99.5%. Further discussion of the variability over ten folds can be found in the Sampling Variability tab.
 
 ```{r Log Reg, message=FALSE, warning=FALSE,  results="hold"}
 #pass
@@ -245,11 +265,9 @@ summary(glm.fit)
 
 ```
 
+The model fit summary output indicates that the three predictors all have significant p-values, meaning that they all are contributing to the model. The accuracy output indicates that over ten folds the average accuracy was 99.5%. Further discussion of the variability over ten folds can be found in the Sampling Variability tab.
+
 ### ROC
-
-The receiver operating characteristic or [ROC](https://en.wikipedia.org/wiki/Receiver_operating_characteristic) is a graphic which illustrates the true positive percentage and the false positive percentage produced by the fit model at different threshold values. Generally, we seek to maximize the true positive rate (TPR) and minimize the false positive rate (FPR). For this project, are interested in maximizing the TPR and minimizing the FPR. However, because we are creating models that will assist in saving lives we are very concerned with the false negative rate. We want to avoid missed blue tarps as best we can with the budget we're allowed. Due to the imbalance in the ratio of our BT and NBT observations, we must be concerned with the FPs (NBTs flagged as BTs) depleting our available resources before we are able to find all the blue tarps (TP). 
-
-The area under the curve or [AUC](https://towardsdatascience.com/understanding-auc-roc-curve-68b2303cc9c5) is a metric that indicates how well a model can differentiate between two classes.The higher the AUC the better the model is a predicting class labels correctly.    
 
 ```{r Log Reg pred,  results="hold"}
 #pass
@@ -258,9 +276,9 @@ par(pty="s")
 glm_roc <- roc(df_factor $Blue_Tarp_or_Not, glm.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#0072B2", lwd=4, print.auc=TRUE, main="Log. Reg. ROC Curve") 
 ```
 
-### Thresholds
+An AUC of 99.9% indicates that our model is able to distinguish between the classes almost perfectly. It should be possible to choose a threshold that can identify most of the training blue tarps without going over our budget. 
 
-It can be difficult to determine what threshold to choose for your model from just an ROC curve alone. To aid in threshold selection I decided to graph the TPR, FPR, and threshold  in a 3-D scatterplot. As you can see from the interactive graphic below,  it's much easier to determine which threshold to choose to give you the model performance  that is appropriate for your application. In our case, our threshold selection is guided by the aim of maximizing the TPR while minimizing the FPR and ensuring that our operation does not exceed or exhaust our budget by pursuing incorrectly labeled not blue tarps (false positives). 
+### Thresholds
 
 ```{r LR Thresholds,  results="hold"}
 roc.info_glm <- roc(df_factor$Blue_Tarp_or_Not, glm.prob[,2], legacy.axes=TRUE)
@@ -279,8 +297,6 @@ fig2
 ```
 
 ### Confusion Matrix
-
-The [confusion matrix](https://en.wikipedia.org/wiki/Confusion_matrix) displays the true negatives, false negatives, false positives, and true positives giving a sense of the performance of a model. These values are used to calculate metrics which are commonly used to compare the performance of models such as the TPR (also known as sensitivity or recall), FPR, FNR, true negative rate (specificity), precision, and many more.  
 
 ```{r Log Reg Confusion Matrix,  results="hold"}
 lr.thresh <- 0.03265
@@ -307,21 +323,20 @@ A threshold of `r lr.thresh` was selected for this model.
 
 ### Sampling Variability 
 
-Understanding the confidence of the model you've created is critical to understanding how well your model will perform when given a new data set with a different values. How much variability can you expect from your model? Based on the k folds accuracy performance, which exhibits variation in the thousands place, we can have confidence in the model performing as expected even when there is some variation in the data.  
-
 ```{r LR Sampling Variablity,  results="hold" }
 "10 Fold Results"
 glm.fit$resample #point est +/- std from 10 folds "variation in the third decimal place"... 
 glm.sd <- sd(glm.fit[["resample"]][["Accuracy"]]*100)
 #plot(glm.fit[["resample"]][["Accuracy"]], main="Accuracy per Fold", xlab= "Fold Number", ylab="Accuracy")
 ```
- The average accuracy across ten folds is `r round(acc_LR, 2)` with a standard deviation of `r round(glm.sd, 3)`. 
+
+The average accuracy across ten folds is `r round(acc_LR, 2)` with a standard deviation of `r round(glm.sd, 3)`. Based on the k folds accuracy performance, which exhibits variation in the thousands place, we can have confidence in the model performing well even when there is some variation in the data. However, if another data set is significantly different than the training data set there could be a considerable change in performance. 
 
 ## LDA {.tabset }
 
-### Model
+LDA is a classification method that uses the maximum likelihood method to classify observations. LDA assumes each class has a normal distribution and that every covariance is the same.This creates a linear separation boundary between classes. The observation is assigned to the class with the highest calculated likelihood. Caret automatically does the calculation to convert the likelihood to a probability, which is what we use in conjunction with our chosen threshold to classify our data.  
 
-LDA is a classification method that uses the maximum likelihood method to classify obesrvations. LDA assumes each class has a normal distribution and that every covariance is the same.This creates a linear separation boundary between classes. The observation is assigned to the class with the highest calculated likelihood. Caret automatically does the calculation to convert the likelihood to a probability, which is what we use in conjunction with our chosen threshold to classify our data.  
+### Model
 
 ```{r LDA,  results="hold"}
 #pass
@@ -351,6 +366,8 @@ lda.prob <- predict(lda.fit, newdata=df_factor, type = "prob") #returns df with 
 par(pty="s")
 lda_roc <- roc(df_factor$Blue_Tarp_or_Not, lda.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#0072B2", lwd=4, print.auc=TRUE, main="LDA ROC Curve") 
 ```
+
+An AUC of 98.9% indicates that our model is able to distinguish between the classes pretty well. With a higher false positive percentage where the true positive percentage is near 100% it will likely be more difficult to choose a threshold that can identify most of the training blue tarps without going over our budget. 
 
 ### Thresholds
 
@@ -391,6 +408,7 @@ F.lda <- round(2*((prec_lda*sens_lda)/(prec_lda+sens_lda))/100, 2)
 cost.lda <- cm.lda_thresh[["table"]][1]*0 + cm.lda_thresh[["table"]][2]*FP_C + cm.lda_thresh[["table"]][3]*FN_C + cm.lda_thresh[["table"]][4]*TP_C
 cost.lda
 ```
+
 Based on the performance of the LDA model, I was unable to find a threshold that satisfied the budget. Therefore, I chose a threshold that minimized cost and number of false negatives. 
 
 ### Sampling Variability 
@@ -400,15 +418,16 @@ Based on the performance of the LDA model, I was unable to find a threshold that
 lda.fit$resample  
 lda.sd <- sd(lda.fit[["resample"]][["Accuracy"]]*100)
 ```
-The average accuracy across ten folds is `r round(acc_lda, 2)` with a standard deviation of `r round(lda.sd, 3)`.  
+
+The average accuracy across ten folds is `r round(acc_lda, 2)` with a standard deviation of `r round(lda.sd, 3)`. Based on the k folds accuracy performance, which exhibits variation in the thousands place, we can have confidence in the model performing well even when there is some variation in the data. However, if another data set is significantly different than the training data set there could be a considerable change in performance. 
 
 ## QDA {.tabset }
-
-### Model
 
 QDA is a classification method that uses the maximum likelihood method to classify observations. QDA assumes each class has a normal distribution. Each class has its own mean and covariance. The observation is assigned to the class with the highest calculated likelihood. Caret automatically does the calculation to convert the likelihood to a probability, which is what we use in conjunction with our chosen threshold to classify our data.
 
 The decision boundary created by QDA is quadratic and allows for different covariances for the classes. Therefore, you will see better performance of a QDA model compared to a LDA model when the boundary between classes of data is non-linear and the classes have different covariance values. 
+
+### Model
 
 ```{r QDA,  results="hold"}
 #pass
@@ -438,6 +457,8 @@ qda.prob <- predict(qda.fit, newdata=df_factor , type = "prob") #returns df with
 par(pty="s")
 qda_roc <- roc(df_factor $Blue_Tarp_or_Not, qda.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#0072B2", lwd=4, print.auc=TRUE, main="QDA ROC Curve") 
 ```
+
+An AUC of 99.8% indicates that our model is able to distinguish between the classes very well. It should be possible to choose a threshold that can identify most of the training blue tarps without going over our budget. 
 
 ### Thresholds 
 
@@ -486,13 +507,14 @@ qda.fit$resample #point est +/- std from 10 folds "variation in the third decima
 qda.sd <- sd(qda.fit[["resample"]][["Accuracy"]]*100)
 
 ```
-The average accuracy across ten folds is `r round(acc_qda, 2)` with a standard deviation of `r round(qda.sd, 3)`.  
+
+The average accuracy across ten folds is `r round(acc_qda, 2)` with a standard deviation of `r round(qda.sd, 3)`. Based on the k folds accuracy performance, which exhibits variation in the thousands place, we can have confidence in the model performing well even when there is some variation in the data. However, if another data set is significantly different than the training data set there could be a considerable change in performance.  
 
 ## KNN {.tabset }
 
-### Model 
-
 K nearest neighbors is a modeling method that calculates the probability an observation belongs to one class or another based on the class of its k nearest neighbors (observations closest in data space to the observation we're trying to classify) are assigned to. K values of 5 or 10 are often chosen to avoid too much bias (happens when k is too big) and too much variance (happens when K is too small). 
+
+### Model 
 
 ```{r KNN,  results="hold"}
 #pass
@@ -516,6 +538,8 @@ knn.fit
 
 ```
 
+The model fit indicates that the highest accuracy is obtained when k is 7. 
+
 ```{r}
 plot(knn.fit)
 ```
@@ -530,9 +554,9 @@ par(pty="s")
 knn_roc <- roc(df_factor $Blue_Tarp_or_Not, knn.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#0072B2", lwd=4, print.auc=TRUE, main="KNN ROC Curve") 
 ```
 
-### Thresholds 
+An AUC of 100.0% indicates that our model is able to distinguish between the classes perfectly. It should be possible to choose a threshold that can identify all of the training blue tarps without going over our budget. 
 
-Not sure why there are only 10 values for this one...? 
+### Thresholds 
 
 ```{r KNN Thresholds,  results="hold"}
 roc.info_knn <- roc(df_factor$Blue_Tarp_or_Not, knn.prob[,2], legacy.axes=TRUE)
@@ -580,15 +604,15 @@ knn.fit$resample #point est +/- std from 10 folds "variation in the third decima
 knn.sd <- sd(knn.fit[["resample"]][["Accuracy"]]*100)
 
 ```
-The average accuracy across ten folds when k = `r k_knn` is `r round(acc_knn, 2)` with a standard deviation of `r round(knn.sd, 3)`.  
+
+The average accuracy across ten folds when k = `r k_knn` is `r round(acc_knn, 2)` with a standard deviation of `r round(knn.sd, 3)`. Based on the k folds accuracy performance, which exhibits variation in the thousands place, we can have confidence in the model performing well even when there is some variation in the data. However, if another data set is significantly different than the training data set there could be a considerable change in performance.    
 
 
 ## Random Forest {.tabset }
 
-### Model 
-
 Random forest is a classification method that uses a large number of averaged decorrelated decision trees to assign a class to an observation. Decorrelation is accomplished by limiting the number of predictors the trees may use to split the data. To assign a class to a new observation, the observation is classified by all the trees in the model and assigned a final classification based on which class the largest number of trees assigned to that observation. 
 
+### Model 
 
 ```{r Random Forest,  results="hold"}
 #pass
@@ -612,6 +636,8 @@ rf.fit
 
 ```
 
+The RF model was fit on 500 trees and the tuning parameter mtry=2 (number of variables chosen at each sample split) was selected. The difference in accuracy between mtry=2 and mtry=3 incredibly small (hundred thousandths place). 
+
 ```{r}
 plot(rf.fit)
 ```
@@ -624,6 +650,8 @@ RF.prob <- predict(rf.fit, newdata=df_factor , type = "prob") #returns df with c
 par(pty="s")
 RF_roc <- roc(df_factor $Blue_Tarp_or_Not, RF.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#0072B2", lwd=4, print.auc=TRUE, main="RF ROC Curve") 
 ```
+
+An AUC of 99.4% indicates that our model is able to distinguish between the classes pretty well. It is likely that a threshold that can identify most of the training blue tarps without going over our budget can be chosen.
 
 ### Thresholds 
 
@@ -674,17 +702,17 @@ rf.fit$resample #point est +/- std from 10 folds "variation in the third decimal
 rf.sd <- sd(rf.fit[["resample"]][["Accuracy"]]*100)
 
 ```
-The average accuracy across ten folds when mtry = `r mtry_best`  is `r round(acc_RF, 2)` with a standard deviation of `r round(rf.sd, 3)`.  
+The average accuracy across ten folds when mtry = `r mtry_best`  is `r round(acc_RF, 2)` with a standard deviation of `r round(rf.sd, 3)`. Based on the k folds accuracy performance, which exhibits variation in the thousands place, we can have confidence in the model performing well even when there is some variation in the data. However, if another data set is significantly different than the training data set there could be a considerable change in performance.    
 
 ## SVM {.tabset }
-
-### Model 
 
 Support vector machines or [SVMs](https://towardsdatascience.com/support-vector-machine-introduction-to-machine-learning-algorithms-934a444fca47) are a classification (or regression) technique that generates a hyperplane in N-dimensional space to separate the classes. This is accomplished by choosing the hyperplane that creates the largest margin between the classes. SVM is touted as one of the best classifiers when the data is numeric and continuous (which is not our use case though we will see SVm does a good job predicting on our data set) and the right kernel is used.
 
 Support vectors are data points that are closest to the hyperplane and influence its position and orientation. They fall within the allowable margin on either side of the hyperplane. The SVM model produces a score between -1 and 1 for each observation. The sign of the score indicates which class the model assigned the observation to. 
 
 Based on the way caret has been programmed, the predict function creates probabilities instead of scores. This will allow a threshold to be chosen to generate confusion matrices. 
+
+### Model 
 
 ```{r SVM Radial,  results="hold"}
 #pass
@@ -721,6 +749,8 @@ plot(svm.radial.fit)
 
 Both linear and poly SVM functions were considered. Radial SVM produced the highest accuracy values, by less than a percentage point, of the three methods. SVM radial was chosen for building the SVM model. 
 
+The best tuning parameters selected for the radial model fit were sigma = 9.020118 and C = 128.
+
 ### ROC 
 
 ```{r SVM pred,  results="hold"}
@@ -729,6 +759,8 @@ SVM.prob <- predict(svm.radial.fit, newdata=df_factor , type = "prob") #returns 
 par(pty="s")
 SVM_roc <- roc(df_factor $Blue_Tarp_or_Not, SVM.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#0072B2", lwd=4, print.auc=TRUE, main="SVM ROC Curve") 
 ```
+
+An AUC of 99.9% indicates that our model is able to distinguish between the classes almost perfectly. It should be possible to choose a threshold that can identify most of the training blue tarps without going over our budget. 
 
 ### Thresholds
 
@@ -771,6 +803,7 @@ F.svm <- round(2*((prec_SVM*sens_SVM)/(prec_SVM+sens_SVM))/100,2)
 cost.SVM <- cm.SVM_thresh[["table"]][1]*0 + cm.SVM_thresh[["table"]][2]*FP_C + cm.SVM_thresh[["table"]][3]*FN_C + cm.SVM_thresh[["table"]][4]*TP_C
 cost.SVM
 ```
+
 ### Sampling Variability 
 
 ```{r SVM Sampling Variablity,  results="hold" }
@@ -779,7 +812,8 @@ svm.radial.fit$resample #point est +/- std from 10 folds "variation in the third
 svm.sd <- sd(svm.radial.fit[["resample"]][["Accuracy"]]*100)
 
 ```
-The average accuracy across ten folds is `r round(acc_SVM, 2)` with a standard deviation of `r round(svm.sd, 3)`.  
+
+The average accuracy across ten folds is `r round(acc_SVM, 2)` with a standard deviation of `r round(svm.sd, 3)`. Based on the k folds accuracy performance, which exhibits variation in the thousands place, we can have confidence in the model performing well even when there is some variation in the data. However, if another data set is significantly different than the training data set there could be a considerable change in performance.    
 
 ## K-Folds Out of Sampling Performance 
 
@@ -834,7 +868,7 @@ sens_LR_FHO <-  round(cm.glm_thresh_FHO[["byClass"]][["Sensitivity"]]*100, 2)
 spec_LR_FHO <- round(cm.glm_thresh_FHO[["byClass"]][["Specificity"]]*100, 2)
 FDR_LR_FHO <- round(((cm.glm_thresh_FHO[["table"]][2,1])/(cm.glm_thresh_FHO[["table"]][2,1]+cm.glm_thresh_FHO[["table"]][2,2]))*100, 2)
 prec_LR_FHO <- round(cm.glm_thresh_FHO[["byClass"]][["Precision"]]*100, 2)
-
+F.glm_FHO <- round(2*((prec_LR_FHO*sens_LR_FHO)/(prec_LR_FHO+sens_LR_FHO))/100, 2)
 ```
 
 #### ROC 
@@ -868,6 +902,7 @@ sens_lda_FHO <-  round(cm.lda_thresh_FHO[["byClass"]][["Sensitivity"]]*100,2)
 spec_lda_FHO <- round(cm.lda_thresh_FHO[["byClass"]][["Specificity"]]*100,2)
 FDR_lda_FHO <- round(((cm.lda_thresh_FHO[["table"]][2,1])/(cm.lda_thresh_FHO[["table"]][2,1]+cm.lda_thresh_FHO[["table"]][2,2]))*100,2)
 prec_lda_FHO <- round(cm.lda_thresh_FHO[["byClass"]][["Precision"]]*100, 2)
+F.lda_FHO <- round(2*((prec_lda_FHO*sens_lda_FHO)/(prec_lda_FHO+sens_lda_FHO))/100, 2)
 ```
 #### ROC 
 
@@ -899,6 +934,7 @@ sens_qda_FHO <-  round(cm.qda_thresh_FHO[["byClass"]][["Sensitivity"]]*100,2)
 spec_qda_FHO <- round(cm.qda_thresh_FHO[["byClass"]][["Specificity"]]*100,2)
 FDR_qda_FHO <- round(((cm.qda_thresh_FHO[["table"]][2,1])/(cm.qda_thresh_FHO[["table"]][2,1]+cm.qda_thresh_FHO[["table"]][2,2]))*100,2)
 prec_qda_FHO <- round(cm.qda_thresh_FHO[["byClass"]][["Precision"]]*100,2)
+F.qda_FHO <- round(2*((prec_qda_FHO*sens_qda_FHO)/(prec_qda_FHO+sens_qda_FHO))/100,2)
 ```
 
 #### ROC 
@@ -932,6 +968,7 @@ sens_knn_FHO <-  round(cm.knn_thresh_FHO[["byClass"]][["Sensitivity"]]*100,2)
 spec_knn_FHO <- round(cm.knn_thresh_FHO[["byClass"]][["Specificity"]]*100,2)
 FDR_knn_FHO <- round(((cm.knn_thresh_FHO[["table"]][2,1])/(cm.knn_thresh_FHO[["table"]][2,1]+cm.knn_thresh_FHO[["table"]][2,2]))*100,2)
 prec_knn_FHO <- round(cm.knn_thresh_FHO[["byClass"]][["Precision"]]*100,2)
+F.knn_FHO <- round(2*((prec_knn_FHO*sens_knn_FHO)/(prec_knn_FHO+sens_knn_FHO))/100,2)
 ```
 #### ROC 
 
@@ -963,6 +1000,7 @@ sens_RF_FHO <-  round(cm.RF_thresh_FHO[["byClass"]][["Sensitivity"]]*100,2)
 spec_RF_FHO <- round(cm.RF_thresh_FHO[["byClass"]][["Specificity"]]*100,2)
 FDR_RF_FHO <- round(((cm.RF_thresh_FHO[["table"]][2,1])/(cm.RF_thresh_FHO[["table"]][2,1]+cm.RF_thresh_FHO[["table"]][2,2]))*100,2)
 prec_RF_FHO <- round(cm.RF_thresh_FHO[["byClass"]][["Precision"]]*100,2)
+F.rf_FHO <- round(2*((prec_RF_FHO*sens_RF_FHO)/(prec_RF_FHO+sens_RF_FHO))/100,2)
 ```
 
 #### ROC 
@@ -995,6 +1033,7 @@ sens_SVM_FHO <-  round(cm.SVM_thresh_FHO[["byClass"]][["Sensitivity"]]*100,2)
 spec_SVM_FHO <- round(cm.SVM_thresh_FHO[["byClass"]][["Specificity"]]*100,2)
 FDR_SVM_FHO <- round(((cm.SVM_thresh_FHO[["table"]][2,1])/(cm.SVM_thresh_FHO[["table"]][2,1]+cm.SVM_thresh_FHO[["table"]][2,2]))*100,2)
 prec_SVM_FHO <- round(cm.SVM_thresh_FHO[["byClass"]][["Precision"]]*100,2)
+F.svm_FHO <- round(2*((prec_SVM_FHO*sens_SVM_FHO)/(prec_SVM_FHO+sens_SVM_FHO))/100,2)
 ```
 
 #### ROC 
@@ -1026,9 +1065,9 @@ parallel::stopCluster(cl)
 |        Specificity=1-FPR | `r spec_knn_FHO`%  | `r spec_lda_FHO`%  | `r spec_qda_FHO`%  | `r spec_LR_FHO`%  |`r spec_RF_FHO`%    |`r spec_SVM_FHO`%   |
 |                      FDR | `r FDR_knn_FHO`%   | `r FDR_lda_FHO`%   | `r FDR_qda_FHO`%   | `r FDR_LR_FHO`%   | `r FDR_RF_FHO`%    |`r FDR_SVM_FHO`%    |
 |            Precision=PPV | `r prec_knn_FHO`%  | `r prec_lda_FHO`%  | `r prec_qda_FHO`%  | `r prec_LR_FHO`%  |`r prec_RF_FHO`%    | `r prec_SVM_FHO`%  |
+|                  F Score | `r round(F.knn_FHO, 3)`| `r round(F.lda_FHO, 3)`| `r round(F.qda_FHO, 3)`| `r round(F.glm_FHO, 3)`| `r round(F.rf_FHO, 3)`| `r round(F.svm_FHO, 3)` |
 
-
-Using the performance results for each model on the final hold out data set, the predicted cost ...  
+**!!!!! (a) appropriate interpretation of your chosen tuning parameter values, and (b) explanation of how they were chosen.**
 
 # Conclusions 
 
@@ -1143,11 +1182,11 @@ legend("bottomright",legend=c("Log. Reg.","LDA", "QDA", "KNN", "RF", "SVM"), col
 
 precision and recall. How accuracy doesn't necessarily serve our context well. 
 
-# Future Work 
+**5. Discussion of budget and threshold selection **
 
-```{r}
-#consider if I was able to find an additional data source like lidar or infrared to pair with this dataset to improve model performance... ? 
-```
+**6. Future Work** 
+
+Lidar
 
 # Acknowledgements
 
@@ -1173,9 +1212,6 @@ A sincere thank you to Professor Schwartz and his excellent instruction this sem
 * https://medium.com/swlh/roc-curve-and-auc-detailed-understanding-and-r-proc-package-86d1430a3191 
 
 
-
-
- 
 ```{r, echo=FALSE}
 toc()
 ```
