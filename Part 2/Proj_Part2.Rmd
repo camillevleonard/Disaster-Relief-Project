@@ -315,7 +315,7 @@ FDR_LR <- ((cm.glm_thresh[["table"]][2,1])/(cm.glm_thresh[["table"]][2,1]+cm.glm
 prec_LR <- cm.glm_thresh[["byClass"]][["Precision"]]*100
 F.glm <- round(2*((prec_LR*sens_LR)/(prec_LR+sens_LR))/100, 2)
 
-cost.glm <- cm.glm_thresh[["table"]][1]*0 + cm.glm_thresh[["table"]][2]*FP_C + cm.glm_thresh[["table"]][3]*FN_C + cm.glm_thresh[["table"]][4]*TP_C
+cost.glm <- round(cm.glm_thresh[["table"]][1]*0 + cm.glm_thresh[["table"]][2]*FP_C + cm.glm_thresh[["table"]][3]*FN_C + cm.glm_thresh[["table"]][4]*TP_C, 4)
 cost.glm
 ```
 
@@ -405,7 +405,7 @@ FDR_lda <- ((cm.lda_thresh[["table"]][2,1])/(cm.lda_thresh[["table"]][2,1]+cm.ld
 prec_lda <- cm.lda_thresh[["byClass"]][["Precision"]]*100
 F.lda <- round(2*((prec_lda*sens_lda)/(prec_lda+sens_lda))/100, 2)
 
-cost.lda <- cm.lda_thresh[["table"]][1]*0 + cm.lda_thresh[["table"]][2]*FP_C + cm.lda_thresh[["table"]][3]*FN_C + cm.lda_thresh[["table"]][4]*TP_C
+cost.lda <- round(cm.lda_thresh[["table"]][1]*0 + cm.lda_thresh[["table"]][2]*FP_C + cm.lda_thresh[["table"]][3]*FN_C + cm.lda_thresh[["table"]][4]*TP_C, 4)
 cost.lda
 ```
 
@@ -495,7 +495,7 @@ FDR_qda <- ((cm.qda_thresh[["table"]][2,1])/(cm.qda_thresh[["table"]][2,1]+cm.qd
 prec_qda <- cm.qda_thresh[["byClass"]][["Precision"]]*100
 F.qda <- round(2*((prec_qda*sens_qda)/(prec_qda+sens_qda))/100,2)
 
-cost.qda <- cm.qda_thresh[["table"]][1]*0 + cm.qda_thresh[["table"]][2]*FP_C + cm.qda_thresh[["table"]][3]*FN_C + cm.qda_thresh[["table"]][4]*TP_C
+cost.qda <- round(cm.qda_thresh[["table"]][1]*0 + cm.qda_thresh[["table"]][2]*FP_C + cm.qda_thresh[["table"]][3]*FN_C + cm.qda_thresh[["table"]][4]*TP_C, 4)
 cost.qda
 ```
 
@@ -593,7 +593,7 @@ prec_knn <- cm.knn_thresh[["byClass"]][["Precision"]]*100
 k_knn <- knn.fit[["bestTune"]][["k"]]
 F.knn <- round(2*((prec_knn*sens_knn)/(prec_knn+sens_knn))/100,2)
 
-cost.knn <- cm.knn_thresh[["table"]][1]*0 + cm.knn_thresh[["table"]][2]*FP_C + cm.knn_thresh[["table"]][3]*FN_C + cm.knn_thresh[["table"]][4]*TP_C
+cost.knn <- round(cm.knn_thresh[["table"]][1]*0 + cm.knn_thresh[["table"]][2]*FP_C + cm.knn_thresh[["table"]][3]*FN_C + cm.knn_thresh[["table"]][4]*TP_C,4)
 cost.knn
 ```
 ### Sampling Variability 
@@ -691,7 +691,7 @@ mtry_best <- rf.fit[["bestTune"]][["mtry"]]
 ntree <- rf.fit[["finalModel"]][["ntree"]]
 F.rf <- round(2*((prec_RF*sens_RF)/(prec_RF+sens_RF))/100,2)
 
-cost.RF <- cm.RF_thresh[["table"]][1]*0 + cm.RF_thresh[["table"]][2]*FP_C + cm.RF_thresh[["table"]][3]*FN_C + cm.RF_thresh[["table"]][4]*TP_C
+cost.RF <- round(cm.RF_thresh[["table"]][1]*0 + cm.RF_thresh[["table"]][2]*FP_C + cm.RF_thresh[["table"]][3]*FN_C + cm.RF_thresh[["table"]][4]*TP_C,4)
 cost.RF
 ```
 ### Sampling Variability 
@@ -800,7 +800,7 @@ sigma_best <- round(svm.radial.fit[["bestTune"]][["sigma"]], 4)
 C_best <- svm.radial.fit[["bestTune"]][["C"]]
 F.svm <- round(2*((prec_SVM*sens_SVM)/(prec_SVM+sens_SVM))/100,2)
 
-cost.SVM <- cm.SVM_thresh[["table"]][1]*0 + cm.SVM_thresh[["table"]][2]*FP_C + cm.SVM_thresh[["table"]][3]*FN_C + cm.SVM_thresh[["table"]][4]*TP_C
+cost.SVM <- round(cm.SVM_thresh[["table"]][1]*0 + cm.SVM_thresh[["table"]][2]*FP_C + cm.SVM_thresh[["table"]][3]*FN_C + cm.SVM_thresh[["table"]][4]*TP_C, 4)
 cost.SVM
 ```
 
@@ -1067,11 +1067,29 @@ parallel::stopCluster(cl)
 |            Precision=PPV | `r prec_knn_FHO`%  | `r prec_lda_FHO`%  | `r prec_qda_FHO`%  | `r prec_LR_FHO`%  |`r prec_RF_FHO`%    | `r prec_SVM_FHO`%  |
 |                  F Score | `r round(F.knn_FHO, 3)`| `r round(F.lda_FHO, 3)`| `r round(F.qda_FHO, 3)`| `r round(F.glm_FHO, 3)`| `r round(F.rf_FHO, 3)`| `r round(F.svm_FHO, 3)` |
 
-**!!!!! (a) appropriate interpretation of your chosen tuning parameter values, and (b) explanation of how they were chosen.**
+
+**Selection and Interpretation of Tuning Parameters:**
+
+Three models - KNN, RF, and SVM -  had tuning parameters. 
+
+KNN’s tuning parameter was k which represents the number of observations that the model is told to use to determine which class a new observation is assigned to. My  code specified a tuneLength of 10, which resulted a model being fit for ten different k values. The following values were tried for k: 5, 7, 9, 11, 13, 15, 17, 19, 21, 23. The k with the highest accuracy, k=7, was selected as the best fit and used for the final mode. 
+
+RF’s tuning parameter was mtry. This parameter represents the number of variables chosen at each sample split as the trees are created. Due to there only being three predictors, values of mtry=2 and mtry = 3 were considered. The model fit with mtry=2 produced a higher accuracy than mtry=3 and was selected as the best fit. It should be noted that difference in accuracy between mtry=2 and mtry=3 incredibly small (hundred thousandths place). I would also like to comment that the parameter ntrees, the number of trees built to fit the model, can also be specified for the model. Caret automatically chose 500 trees. Based on the high accuracy produced by 500 trees I did not investigate this parameter further.  
+
+SVM has two tuning parameters C, the cost penalty (which ultimately controls the margin size), and sigma, a scaling factor for the exponential behavior (which referred to as gamma in our textbook). More specifically, this sigma parameter is called the “inverse width parameter in the Gaussian Radial Basis kernel”. The larger your C value the bigger the penalty for misclassifications. This results in fewer support vectors and a smaller margin. Small margins result in lower bias and higher variance. With caret a tuneLength = 10 was run. Ten values for C were fit on different models. Trying to explain how sigma was chosen, I realized only one sigma value was used when tuneLength is called. [This thread]( https://stackoverflow.com/questions/38859705/r-understanding-caret-traintunelength-and-svm-methods-from-kernlab) indicates that svmRadial chooses a single sigma based on the output from [sigest]( https://www.rdocumentation.org/packages/kernlab/versions/0.9-29/topics/sigest) a function from the kernlab library. Per the function’s description, sigest returns a range of values for sigma which will return good results. I assume svmRadial chooses one of those sigma values, on what basis this decision is made I’m not sure. If I had realized this sooner, I could have used svmRadialSigma which tunes over both cost and sigma. 
+
+Returning to the explanation of what parameters were chosen, C = 128 and sigma = 9.020118. These were the parameters that created the best fit of the model from the 10 options provided by tuneLength. If I had more time to play with the project I would investigate the difference in performance between a model fit with C = 32 and C = 128 on the FHO data. There's only 0.0000475% difference in the accuracy of models fit with those C values. A smaller C would result in a larger margin. It is possible that with a wider margin there could be better performance in predicting the FHO data. 
+
 
 # Conclusions 
 
 **1. A discussion of the best performing algorithm(s) in the cross-validation and hold-out data**
+
+We can see from Table 2, that the random forest model exhibited the highest accuracy of all six models on the training (cross-validation) data. This is also true for the 
+
+
+- which algorithms appear to be reasonable/good choices for use according to cross-validation?
+- which algorithms actually ended up performing well in the hold-out data?
 
 With the goal of delivering supplies to the greatest number of people without spending too many resources pursuing false positives, 
 (discussion on FHO data why we do this... what the benefits are... potential pitfalls)
@@ -1079,6 +1097,8 @@ With the goal of delivering supplies to the greatest number of people without sp
 
 
 **2. A discussion or analysis justifying why your findings above are compatible or reconcilable**
+
+- Do the answers in both of the above questions agree? (I.e., are they compatible?)  If not, do you have any reasons why they might not agree? (I.e., can they be reconciled somehow?)
 
 Why do we see variation like we do... 
 Linear discriminant analysis or (LDA) is another classification technique that models the distribution of the predictors for each class separately uses a linear decision boundary to 

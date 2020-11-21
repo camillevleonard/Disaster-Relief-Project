@@ -1,0 +1,61 @@
+Index, Model, Accuracy, Accuracy_Lower, Accuracy_Upper
+1, Log. Reg, cm.glm_thresh_FHO[["overall"]][["Accuracy"]], cm.glm_thresh_FHO[["overall"]][["AccuracyLower"]],cm.glm_thresh_FHO[["overall"]][["AccuracyUpper"]] 
+2, LDA, cm.lda_thresh_FHO[["overall"]][["Accuracy"]], cm.lda_thresh_FHO[["overall"]][["AccuracyLower"]],cm.lda_thresh_FHO[["overall"]][["AccuracyUpper"]] 
+3, QDA, cm.qda_thresh_FHO[["overall"]][["Accuracy"]], cm.qda_thresh_FHO[["overall"]][["AccuracyLower"]],cm.qda_thresh_FHO[["overall"]][["AccuracyUpper"]]
+4, KNN, cm.knn_thresh_FHO[["overall"]][["Accuracy"]], cm.knn_thresh_FHO[["overall"]][["AccuracyLower"]],cm.knn_thresh_FHO[["overall"]][["AccuracyUpper"]] 
+5, RF, cm.RF_thresh_FHO[["overall"]][["Accuracy"]], cm.RF_thresh_FHO[["overall"]][["AccuracyLower"]],cm.RF_thresh_FHO[["overall"]][["AccuracyUpper"]] 
+6, SVM, cm.SVM_thresh_FHO[["overall"]][["Accuracy"]], cm.SVM_thresh_FHO[["overall"]][["AccuracyLower"]],cm.SVM_thresh_FHO[["overall"]][["AccuracyUpper"]] 
+
+
+```{r, eval=FALSE}
+acc_LR
+acc_LR_LB <- cm.glm_thresh[["overall"]][["AccuracyLower"]]
+acc_LR_UB <- cm.glm_thresh[["overall"]][["AccuracyUpper"]] 
+
+acc_lda
+acc_lda_LB <- cm.lda_thresh[["overall"]][["AccuracyLower"]]
+acc_lda_UB <- cm.lda_thresh[["overall"]][["AccuracyUpper"]] 
+
+acc_qda
+acc_qda_LB <- cm.qda_thresh[["overall"]][["AccuracyLower"]]
+acc_qda_UB <- cm.qda_thresh[["overall"]][["AccuracyUpper"]]
+
+acc_knn
+acc_knn_LB <- cm.knn_thresh[["overall"]][["AccuracyLower"]]
+acc_knn_UB <- cm.knn_thresh[["overall"]][["AccuracyUpper"]] 
+
+acc_RF
+acc_RF_LB <- cm.RF_thresh[["overall"]][["AccuracyLower"]]
+acc_RF_UB <- cm.RF_thresh[["overall"]][["AccuracyUpper"]] 
+
+acc_SVM
+acc_SVM_LB <- cm.SVM_thresh[["overall"]][["AccuracyLower"]]
+acc_SVM_UB <- cm.SVM_thresh[["overall"]][["AccuracyUpper"]] 
+```
+
+
+```{r, eval=FALSE}
+acc_LR
+acc_LR_LB_FHO <- cm.glm_thresh_FHO[["overall"]][["AccuracyLower"]]
+acc_LR_UB_FHO <- cm.glm_thresh_FHO[["overall"]][["AccuracyUpper"]] 
+
+acc_lda
+acc_lda_LB_FHO <- cm.lda_thresh_FHO[["overall"]][["AccuracyLower"]]
+acc_lda_UB_FHO <- cm.lda_thresh_FHO[["overall"]][["AccuracyUpper"]] 
+
+acc_qda
+acc_qda_LB_FHO <- cm.qda_thresh_FHO[["overall"]][["AccuracyLower"]]
+acc_qda_UB_FHO <- cm.qda_thresh_FHO[["overall"]][["AccuracyUpper"]]
+
+acc_knn
+acc_knn_LB_FHO <- cm.knn_thresh_FHO[["overall"]][["AccuracyLower"]]
+acc_knn_UB_FHO <- cm.knn_thresh_FHO[["overall"]][["AccuracyUpper"]] 
+
+acc_RF
+acc_RF_LB_FHO <- cm.RF_thresh_FHO[["overall"]][["AccuracyLower"]]
+acc_RF_UB_FHO <- cm.RF_thresh_FHO[["overall"]][["AccuracyUpper"]] 
+
+acc_SVM
+acc_SVM_LB_FHO <- cm.SVM_thresh_FHO[["overall"]][["AccuracyLower"]]
+acc_SVM_UB_FHO <- cm.SVM_thresh_FHO[["overall"]][["AccuracyUpper"]] 
+```
