@@ -1088,7 +1088,6 @@ parallel::stopCluster(cl)
 |                  F~1~ Score | `r round(F.knn_FHO, 3)`| `r round(F.lda_FHO, 3)`| `r round(F.qda_FHO, 3)`| `r round(F.glm_FHO, 3)`| `r round(F.rf_FHO, 3)`| `r round(F.svm_FHO, 3)` |
 |                  F~3~ Score | `r round(F3.knn_FHO, 3)`| `r round(F3.lda_FHO, 3)`| `r round(F3.qda_FHO, 3)`| `r round(F3.glm_FHO, 3)`| `r round(F3.rf_FHO, 3)`| `r round(F3.svm_FHO, 3)` |
 
-
 **Selection and Interpretation of Tuning Parameters:**
 
 Three models - KNN, RF, and SVM -  had tuning parameters. 
@@ -1101,77 +1100,9 @@ SVM has two tuning parameters C, the cost penalty (which ultimately controls the
 
 Returning to the explanation of what parameters were chosen, C = 128 and sigma = 9.020118. These were the parameters that created the best fit of the model from the 10 options provided by tuneLength. If I had more time to play with the project I would investigate the difference in performance between a model fit with C = 32 and C = 128 on the FHO data. There's only 0.0000475% difference in the accuracy of models fit with those C values. A smaller C would result in a larger margin. It is possible that with a wider margin there could be better performance in predicting the FHO data. 
 
-# Conclusions 
+### Time Considerations
 
-I have reordered the conclusions provided to us in the project description based on what I think provides the best flow for this section.
-
-**A discussion of the relevance of the metrics calculated in the tables to this application context**
-
-Precision and Recall 
-
-The metrics that indicate performance most relevant to our use case are precision and recall. Our primary goal is to correctly identify blue tarps, maximize the true positive rate, so that aid can be provided to the people associated with the blue tarp. Due to the imbalance in proportion between the classes in the data set, we have to be concerned with the false positive rate as well. Identifying all 2,022 blue tarps in our data set (maximizing the TPR) does us no good if we also identify 10,000 not blue tarps (have a high FPR). Taking the time to travel to 10,000 extra and incorrect locations would result in a staggering waste of resources and loss of life as aid workers run out of time to deliver supplies to displaced persons. 
-
-Accuracy
-
-Accuracy is a misleading metric for our application. A high accuracy, the percentage of predictions that are correct, does not guarantee we will be able to effectively achieve the goals of the use case. This is especially true for this project, where achieving a high true positive rate is paramount to successfully executing the mission but the data set is imbalanced. The further we push the threshold to maximize the TPR the larger the number of false positives we will predict with the model. False positives cost us resources of which we don't have an unlimited supply. They also waste time, another resource we are limited in. Therefore, a high accuracy does not provide us with the information we need to know our model will help us achieve our primary objective.    
-
-AUC 
-
-The area under the curve acts like a quick check as we compare performance between models. This metric quantifies how well a model is able to differentiate between classes. It is a good piece of information but not a critical metric that will help us decide which model will perform the best for this application. 
-
-ROC and Threshold
-
-
-
-Specificity
-
-FDR
-
-
-precision and recall. How accuracy doesn't necessarily serve our context well. 
-
-**Discussion of budget and threshold selection **
-
-In our case, our threshold selection is guided by the aim of maximizing the TPR while minimizing the FPR and ensuring that our operation does not exhaust our budget by pursuing incorrectly labeled not blue tarps (false positives) before we reach our success criterion.
-
-**A discussion of the best performing algorithm(s) in the cross-validation and hold-out data**
-
-- which algorithms appear to be reasonable/good choices for use according to cross-validation?
-- which algorithms actually ended up performing well in the hold-out data?
-
-The algorithm that performed the best on the cross-validation data, as decided by recall, precision, cost, and time to fit (metrics were listed in order of importance), was the random forest algorithm. The time to fit table can be found in conclusion 3 for reference. KNN and SVM get honorable mentions based on their recall, precision, and cost metrics. However, their timing metrics were the worst of the six. SVM was 4.3x as long to fit as KNN. While a model will only be fit a few times (first to create the model and later if someone might want to make an adjustment based on a larger future data set to recalibrate the model) time is of the essence so long fit time are considered a con to these models. 
-
-Logistic regression, LDA, and QDA have faster fit times but   
-
-
-
-
-
-We can see from Table 2, that the random forest model exhibited the highest accuracy of all six models on the training (cross-validation) data. This is also true for the performance of the RF model on the final hold out data. 
-
-With the goal of delivering supplies to the greatest number of people without spending too many resources pursuing false positives, 
-(discussion on FHO data why we do this... what the benefits are... potential pitfalls)
-
-**A discussion or analysis justifying why your findings above are compatible or reconcilable**
-
-- Do the answers in both of the above questions agree? (I.e., are they compatible?)  If not, do you have any reasons why they might not agree? (I.e., can they be reconciled somehow?)
-
-Why do we see variation like we do... 
-Linear discriminant analysis or (LDA) is another classification technique that models the distribution of the predictors for each class separately uses a linear decision boundary to 
-
-From ISLR, reasons to consider the use of LDA include:
-
-* When the classes are well-separated, the parameter estimates for the logistic regression model are surprisingly unstable. Linear discriminant analysis does not suffer from this problem.
-* If n is small and the distribution of the predictors X is approximately normal in each of the classes, the linear discriminant model is again more stable than the logistic regression model.
-* Linear discriminant analysis is popular when we have more than two response classes.
-
-**A recommendation and rationale regarding which algorithm to use for detection of blue tarps**
-
-Based on all the aforementioned metrics and performance, I recommend the random forest model be used to detect blue tarps. **discuss time to fit model and run predictions.** 
-
-In my opinion, the increase in time to fit the random forest model compared to logistic regression, LDA and QDA (see model fitting table below) is justified by the superior recall and precision performance of the RF model. In addition, although the time it takes the RF to predict on new data is longer (about 18 seconds compared to about 6.5 seconds) this difference is not so significant that I'd recommend another model. The performance improvements compared to the faster models is still enough to me to use the RF model. 
-
-Does the method need to reference the full data set in order to make predictions?
+The time it took for each model to be fit and the time to run predictions on the FHO data set were recorded. These run times are not absolute they will vary based on hardware differences between devices that run these algorithms and the size of the data sets passed to the functions (if the data sets are changed). Therefore, this is a qualitative measure that can be used to compare the run times of the algorithms. 
 
 ```{r Model Fit Run Time, results="hold"}
 
@@ -1195,8 +1126,6 @@ mfrt.svm <- round((svm.time$toc-svm.time$tic), 2)
 |RF | `r mfrt.rf`|
 |SVM | `r mfrt.svm`|
 
-
-
 ```{r Predict Run Time, results="hold"}
 
 mprt.glm <- round((glm.predict.time$toc-glm.predict.time$tic), 2) 
@@ -1219,13 +1148,154 @@ mprt.svm <- round((svm.predict.time$toc-svm.predict.time$tic),2)
 |RF | `r mprt.rf`|
 |SVM | `r mprt.svm`|
 
-Run time variation between devices, qualitative measure only. Just make note of computer specs 
-
 **Computer Specs. **
 
 * OS: Windows 
 * Processor:	Intel(R) Core(TM) i7-10875H CPU @ 2.30GHz, 2304 Mhz, 8 Core(s), 16 Logical Processor(s)
 * RAM:	32.0 GB
+
+# Conclusions 
+
+I have reordered the conclusions provided to us in the project description based on what I think provides the best flow for this section.
+
+**A discussion of the relevance of the metrics calculated in the tables to this application context**
+
+Accuracy
+
+Accuracy is a misleading metric for our application. A high accuracy, the percentage of predictions that are correct, does not guarantee we will be able to effectively achieve the goals of the use case. This is especially true for this project, where achieving a high true positive rate is paramount to successfully executing the mission but the data set is imbalanced. The further we push the threshold to maximize the TPR the larger the number of false positives we will predict with the model. False positives cost us resources of which we don't have an unlimited supply. They also waste time, another resource we are limited in. Therefore, a high accuracy does not provide us with the information we need to know our model will help us achieve our primary objective.    
+
+AUC 
+
+The area under the curve acts like a quick check as we compare performance between models. This metric quantifies how well a model is able to differentiate between classes. It is a good piece of information but not a critical metric that will help us decide which model will perform the best for this application. 
+
+ROC and Threshold
+
+ROC and threshold aren't performance metrics so they aren't helpful in comparing the performance of the algorithms directly. However, the ROC curve is generated by reported performance metrics (TPR and FPR) at different threshold values. Thresholds set the decision point to determine which class an observation is assigned to. The prediction function produces a probability that is compared to the threshold value and then a class is assigned. By adjusting the threshold we can maximize a metric such as the TPR. So, the ROC and threshold are important in helping us generate and adjust the metrics that are most relevant to our use case.   
+
+Precision and Recall 
+
+The metrics that indicate performance most relevant to our use case are precision and recall. Our primary goal is to correctly identify blue tarps, maximize the true positive rate, so that aid can be provided to the people associated with the blue tarp. Recall quantifies how many TP are identified of the total possible number that could be identified. Therefore, it's indicating the percentage of blue tarps we've identified  of all the blue tarps that are there to be identified. It's critical we achieve the highest recall we can within our limitations because FN are effectively deaths. 
+
+Due to the imbalance in proportion between the classes in the data set, we have to be concerned with the number of false positive as well. The precision metric, which quantifies the percentage of TP classified of the predicted positive condition (TP + FP), represents this concern. Identifying all 2,022 blue tarps in our data set (maximizing the TPR) does us no good if we also identify 10,000 not blue tarps (have a high FPR). Taking the time to travel to 10,000 extra and incorrect locations would result in a staggering waste of resources and loss of life as aid workers run out of time to deliver supplies to displaced persons. To maximize the precision the algorithm has to have a high number of TP and a low number of FP.  
+
+Specificity
+
+Specificity is the true negative rate or (1 - FPR). This metric indicates how well the model is classifying its negative condition. While we are somewhat concerned about how well the model is classifying true negatives as negatives, there is no penalty for a TN. A TN costs us $0 in this use case. Our false negatives and false positives are a larger concern to us. This makes the FPR and precision a larger focus for us.    
+
+FDR
+
+The false discovery rate (FDR) indicates what percentage of our predicted positive condition is actually false positives. False positives for us waste time and resources. The FDR is the opposite metric of precision. Therefore, as we control the precision and maximize it we will minimize the FDR.   
+
+**Discussion of budget and threshold selection **
+
+As is the reality of an aid or disaster relief situation, there are not unlimited resources to provide aid to those effected by the disaster. To assist in creating a more real life example, a budget was created to guide threshold selection. Our aim was to maximize the number of TP while minimizing the FP and ensuring that our operation does not exhaust our allowed budget. The budget would be quickly exhausted by pursuing incorrectly labeled not blue tarps (false positives). 
+
+Additionally, an overall success percentage of 80% was added to make the operation success qualification more stringent. Allocating millions of dollars to provide life saving resources to displaced persons would be considered a political and international relations nightmare if a certain percentage of success was not achieved. 
+
+In our training data set we know that there are 2,022 displaced persons hidden within 63,241 observations. In order for our mission to be considered a success 80% of the 2,022 displaced persons (1,618 people) must be identified and provided resources. Our mission was allocated $2,000,000 to locate the 2,022 displaced persons assigned to us. If we fail to find 404 of these people our mission is a failure, regardless of the cost of the mission. Therefore, to numerically force failure if we don't identify 404 of the TP as TP the cost of a FN is calculated to be \$2,000,000/404. That will keep us from being able to come in under budget. As previously stated in the "Project Budget" section, the cost of a TP is \$1,000 and a FP is \$300. 
+
+This budget limit guided me in the selection of threshold values. First, I sought to produce the lowest number of FN and FP. This typically resulted in the project being over budget. I then adjusted the threshold to still keep the FN as low as possible but allowed more FP.   
+
+Based on the chosen threshold values, random forest had the lowest cost then KNN and SVM. Logistic regression and QDA were just under budget. No matter the threshold I chose, I could not get LDA under budget. I chose a threshold that resulted in the lowest cost for this model. The LDA confusion matrix had the highest number of FN of all the models thus accounting for the lowest recall percentage. 
+
+
+**A discussion of the best performing algorithm(s) in the cross-validation and hold-out data**
+
+Based on the cross-validation data set recall and precision, I rank the models from highest to least likely to recommend (notes next to name indicate what I considered as I chose the rankings):
+
+1. Random forest - high recall, highest precision, low cost
+2. KNN - perfect recall, high precision, low cost
+3. SVM - high recall, high precision
+4. Logistic regression - high recall, higher precision than QDA
+5. QDA - high recall, low precision
+6. LDA - lowest recall, lowest precision, over budget
+
+The algorithm that performed the best on the cross-validation data, as decided by recall, precision, cost, and time to fit (metrics were listed in order of importance), was the random forest algorithm. KNN and SVM get honorable mentions based on their recall, precision, and cost metrics. 
+
+Logistic regression, LDA, and QDA have low precision percentages compared to RF, KNN, and SVM. This can be explained the large number of FP predicted by those models compared to RF, KNN, SVM. 
+
+|Model: | FP | TP |
+|------:|:--:|:--:|
+|RF     | 16 |2,000|
+|KNN    | 534|2,022|
+|SVM    | 845|2,018|
+|Log. Reg.|1,048|1,982|
+|LDA    |1,275| 1,791|
+|QDA    |1,412| 2,008| 
+
+
+Based on the cross-validation data set recall, precision, I rank the models from highest to least likely to recommend (notes next to name indicate what I considered as I chose the rankings):
+
+1. LDA - second best recall (95.7%), third best precision 
+2. Random forest - okay recall (83.5%), best precision
+3. KNN  - pretty good recall (93.2%), second best precision
+4. QDA - good recall, good precision
+5. SVM - worst recall, okay precision
+6. Logistic regression - perfect recall, 222,000+ FP making for worst precision 
+
+All qualitative descriptions are relative to the five other models. I am not impressed with any of the models when it comes to their performance. I felt like I had to place LDA at the top of the list since it had a small number of FN and okay FP numbers. 
+
+**A discussion or analysis justifying why your findings above are compatible or reconcilable**
+
+- Do the answers in both of the above questions agree? (I.e., are they compatible?)  If not, do you have any reasons why they might not agree? (I.e., can they be reconciled somehow?)
+
+I am a bit surprised by the difference in model performance between the training and test data sets. I wouldn't say that the performance was very consistent for the models between data sets. I have to consider whether there is a difference between the training and test sets or if my models were overfit to training data set. 
+
+Below the training data set and the FHO data set (a subset) are graphed. I don't see a significant difference in the separation of the two classes. 
+
+```{r Data Subset for Quick Runs, eval=FALSE, echo=FALSE}
+set.seed(4)
+#In order to make run times faster when tuning parameters subset data with 20%
+trainIndex <- createDataPartition(df_FHO$Blue_Tarp_or_Not, p=0.05,
+                                  list=FALSE,
+                                  times=1)
+df_subset <- df_FHO[trainIndex,]
+```
+
+Training Data Set 
+
+```{r}
+fig1
+```
+
+Subset of the Test Data Set 
+
+```{r}
+
+
+attach(df_FHO)
+fig_end <- plot_ly(df_subset, x=~Red, y=~Green, z=~Blue, color=~Blue_Tarp_or_Not, colors = cbPalette) #Reference: https://plotly.com/r/3d-scatter-plots/ https://plotly.com/r/3d-surface-plots/
+fig_end <- fig_end %>% add_markers()
+fig_end <- fig_end %>% layout(scene=list(xaxis=list(title="Red"),
+                     yaxis = list(title = 'Green'),
+                     zaxis = list(title = 'Blue')))
+
+fig_end
+```
+
+```{r, message=FALSE}
+#Reference [1]
+# The palette with grey:
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73",  "#CC79A7", "#0072B2", "#D55E00")
+#"#F0E442",
+
+#view scatter and correlations  
+p <- ggpairs(df_subset[,1:3], lower.panel = NULL, upper = list(continuous = wrap("cor", size = 3)), aes(color=df_subset$Blue_Tarp_or_Not)) #+ scale_fill_manual(values=cbPalette) 
+
+#Reference: https://stackoverflow.com/questions/34740210/how-to-change-the-color-palette-for-ggallyggpairs/34743555
+for(i in 1:p$nrow) {
+  for(j in 1:p$ncol){
+    p[i,j] <- p[i,j] + 
+        scale_fill_manual(values=cbPalette) +
+        scale_color_manual(values=cbPalette)  
+  }
+}
+
+p
+
+```
+
+Let's see what the ROC curves might tell us about how our thresholding could be factoring into the observed difference in performance. 
 
 ```{r, echo=FALSE, results='hide'}
 par(mfrow=c(1,2), pty="s", cex=0.8)
@@ -1257,6 +1327,36 @@ roc(df_FHO$Blue_Tarp_or_Not, SVM.prob_FHO[,2], plot=TRUE, legacy.axes=TRUE, perc
 
 legend("bottomright",legend=c("Log. Reg.","LDA", "QDA", "KNN", "RF", "SVM"), col=c("#999999", "#E69F00", "#56B4E9", "#009E73",  "#CC79A7", "#0072B2", "#D55E00"),lwd=3, cex =0.8 )
 ```
+
+For our logistic regression model, it looks like the threshold chosen for the cross-validation data set is not appropriate for our test data set. The algorithm perfectly predicts the TP at a threshold much lower than 0.03265. Due to that, an incredibly high number of NBT to be classified as BT resulting in a 11% FPR. 
+
+The LDA model performs with a higher TPR on the FHO than the training data set. I am wondering if the FHO data better satisfies the assumptions of LDA resulting in predicted probabilities that are closer to either extreme. 
+
+KNN with a much larger data set k = 7 may no longer be the best setting for the tuning parameter, resulting in higher error. 
+
+
+
+Linear discriminant analysis or (LDA) is another classification technique that models the distribution of the predictors for each class separately uses a linear decision boundary to 
+
+From ISLR, reasons to consider the use of LDA include:
+
+* When the classes are well-separated, the parameter estimates for the logistic regression model are surprisingly unstable. Linear discriminant analysis does not suffer from this problem.
+* If n is small and the distribution of the predictors X is approximately normal in each of the classes, the linear discriminant model is again more stable than the logistic regression model.
+* Linear discriminant analysis is popular when we have more than two response classes.
+
+**A recommendation and rationale regarding which algorithm to use for detection of blue tarps**
+
+However, their timing metrics were the worst of the six. SVM was 4.3x as long to fit as KNN. While a model will only be fit a few times (first to create the model and later if someone might want to make an adjustment based on a larger future data set to recalibrate the model) time is of the essence so long fit time are considered a con to these models.  
+
+Based on all the aforementioned metrics and performance, I recommend the random forest model be used to detect blue tarps. **discuss time to fit model and run predictions.** 
+
+In my opinion, the increase in time to fit the random forest model compared to logistic regression, LDA and QDA (see model fitting table below) is justified by the superior recall and precision performance of the RF model. In addition, although the time it takes the RF to predict on new data is longer (about 18 seconds compared to about 6.5 seconds) this difference is not so significant that I'd recommend another model. The performance improvements compared to the faster models is still enough to me to use the RF model. 
+
+Does the method need to reference the full data set in order to make predictions?
+
+
+
+
 
 **Future Work** 
 
