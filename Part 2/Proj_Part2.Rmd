@@ -21,7 +21,7 @@ output:
 
 # Project Introduction 
 
-On [January 12, 2010](en.wikipedia.org/wiki/2010_Haiti_earthquake), a magnitude 7.0 earthquake struck Haiti causing significant damage, which affected approximately 3 million citizens. In the wake of the disaster, aid groups were working to locate displaced persons and provide them with food and water. However, due to the large scale destruction of infrastructure over a wide area additional assistance was needed to locate people quickly. 
+On [January 12, 2010](en.wikipedia.org/wiki/2010_Haiti_earthquake), a magnitude 7.0 earthquake struck Haiti causing significant damage, which affected approximately 3 million citizens. In the wake of the disaster, aid groups were working to locate displaced persons to provide food and water. However, due to the large scale destruction of infrastructure over a wide area additional assistance was needed to locate people quickly. 
 
 
 ![Little is left of a neighborhood on a hillside near downtown Port-au-Prince on Jan. 15. More than a million people were displaced by the quake. ([David Gilkey/NPR](https://www.npr.org/sections/pictureshow/2020/01/12/794939899/haiti-in-ruins-a-look-back-at-the-2010-earthquake))](Images/NPR_destruction.jpg)
@@ -43,7 +43,7 @@ These considerations will help guide the selection of thresholds later in the an
 
 |                                          |           |
 |:-----------------------------------------|:----------:|
-|Budget                                    |  $750,000 |
+|Budget                                    |  $2,000,000 |
 |Cost per Delivery (True Positive)         | -$750     | 
 |Cost per Mis-Delivery (False Positive)    | -$300     | 
 |Cost per Missed  Delivery (False Negative) | -$4,946  |
@@ -151,6 +151,8 @@ p
 attach(df) #attach df variables 
 ```
 
+All three predictors are highly correlated with one another, which is unsurprising given the way RGB values are used to represent colors. 
+
 ### 3D Scatter
 
 ```{r}
@@ -199,7 +201,7 @@ fig1 <- fig1 %>% layout(scene=list(xaxis=list(title="Red"),
 fig1
 ```
 
-After the class label is converted into a binary classifier, it is easier to see separation between the data points for blue tarps and not blue tarps. 
+After the class label is converted into a binary classifier, it is easier to see separation between the data points for blue tarps and not blue tarps. In the region with RGB values of about 95 to about 130 there is more overlap than there is separation of the two classes. Observations that fall in this region will likely to be difficult to correctly classify for some predictors.  
 
 
 ```{r Data Subset for Quick Runs, eval=FALSE, echo=FALSE}
@@ -218,7 +220,9 @@ A few general notes on the various metrics and considerations that will be explo
 
 **ROC**
 
-The receiver operating characteristic or [ROC](https://en.wikipedia.org/wiki/Receiver_operating_characteristic) is a graphic which illustrates the true positive percentage and the false positive percentage produced by the fit model at different threshold values. Generally, we seek to maximize the true positive rate (TPR) and minimize the false positive rate (FPR). For this project, are interested in maximizing the TPR and minimizing the FPR. However, because we are creating models that will assist in saving lives we are very concerned with the false negative rate. We want to avoid missed blue tarps, as best we can with the budget we're allowed. Due to the imbalance in the ratio of our BT and NBT observations, we must be concerned with the FPs (NBTs flagged as BTs) depleting our available resources before we are able to find all the blue tarps (TP). 
+The receiver operating characteristic or [ROC](https://en.wikipedia.org/wiki/Receiver_operating_characteristic) is a graphic which illustrates the true positive percentage and the false positive percentage produced by the fit model at different threshold values. Generally, we seek to maximize the true positive rate (TPR) and minimize the false positive rate (FPR). 
+
+For this project, are interested in maximizing the TPR and minimizing the FPR. However, our use case involves saving lives. Therefore, we are very concerned with the false negative rate. We want to avoid missed blue tarps, as best we can with the budget we're allowed. Due to the imbalance in the ratio of our BT and NBT observations, we must be concerned with the FPs (NBTs flagged as BTs) depleting our available resources before we are able to find all the blue tarps (TP). 
 
 **AUC** 
 
@@ -230,7 +234,7 @@ It can be difficult to determine what threshold to choose for your model from ju
 
 **Confusion Matrix**
 
-The [confusion matrix](https://en.wikipedia.org/wiki/Confusion_matrix) displays the true negatives, false negatives, false positives, and true positives giving a sense of the performance of a model. These values are used to calculate metrics which are commonly used to compare the performance of models such as the TPR (also known as sensitivity or recall), FPR, FNR, true negative rate (specificity), precision, and many more. 
+The [confusion matrix](https://en.wikipedia.org/wiki/Confusion_matrix) displays the true negatives, false negatives, false positives, and true positives giving a sense of the performance of a model. These values are used to calculate metrics which are commonly used to compare the performance of models such as the TPR (also known as sensitivity or recall), FPR, FNR, true negative rate (specificity), precision, etc. 
 
 **Sampling Variability**
 
@@ -314,6 +318,8 @@ spec_LR <- cm.glm_thresh[["byClass"]][["Specificity"]]*100
 FDR_LR <- ((cm.glm_thresh[["table"]][2,1])/(cm.glm_thresh[["table"]][2,1]+cm.glm_thresh[["table"]][2,2]))*100
 prec_LR <- cm.glm_thresh[["byClass"]][["Precision"]]*100
 F.glm <- round(2*((prec_LR*sens_LR)/(prec_LR+sens_LR))/100, 2)
+beta_val <- 3
+F3.glm <- round(((1+beta_val**2)*((prec_LR*sens_LR)/(beta_val*prec_LR+sens_LR)))/100, 2)
 
 cost.glm <- round(cm.glm_thresh[["table"]][1]*0 + cm.glm_thresh[["table"]][2]*FP_C + cm.glm_thresh[["table"]][3]*FN_C + cm.glm_thresh[["table"]][4]*TP_C, 4)
 cost.glm
@@ -404,6 +410,7 @@ spec_lda <- cm.lda_thresh[["byClass"]][["Specificity"]]*100
 FDR_lda <- ((cm.lda_thresh[["table"]][2,1])/(cm.lda_thresh[["table"]][2,1]+cm.lda_thresh[["table"]][2,2]))*100
 prec_lda <- cm.lda_thresh[["byClass"]][["Precision"]]*100
 F.lda <- round(2*((prec_lda*sens_lda)/(prec_lda+sens_lda))/100, 2)
+F3.lda <- round(((1+beta_val**2)*((prec_lda*sens_lda)/(beta_val*prec_lda+sens_lda)))/100, 2)
 
 cost.lda <- round(cm.lda_thresh[["table"]][1]*0 + cm.lda_thresh[["table"]][2]*FP_C + cm.lda_thresh[["table"]][3]*FN_C + cm.lda_thresh[["table"]][4]*TP_C, 4)
 cost.lda
@@ -494,6 +501,7 @@ spec_qda <- cm.qda_thresh[["byClass"]][["Specificity"]]*100
 FDR_qda <- ((cm.qda_thresh[["table"]][2,1])/(cm.qda_thresh[["table"]][2,1]+cm.qda_thresh[["table"]][2,2]))*100
 prec_qda <- cm.qda_thresh[["byClass"]][["Precision"]]*100
 F.qda <- round(2*((prec_qda*sens_qda)/(prec_qda+sens_qda))/100,2)
+F3.qda <- round(((1+beta_val**2)*((prec_qda*sens_qda)/(beta_val*prec_qda+sens_qda)))/100, 2)
 
 cost.qda <- round(cm.qda_thresh[["table"]][1]*0 + cm.qda_thresh[["table"]][2]*FP_C + cm.qda_thresh[["table"]][3]*FN_C + cm.qda_thresh[["table"]][4]*TP_C, 4)
 cost.qda
@@ -592,6 +600,7 @@ FDR_knn <- ((cm.knn_thresh[["table"]][2,1])/(cm.knn_thresh[["table"]][2,1]+cm.kn
 prec_knn <- cm.knn_thresh[["byClass"]][["Precision"]]*100
 k_knn <- knn.fit[["bestTune"]][["k"]]
 F.knn <- round(2*((prec_knn*sens_knn)/(prec_knn+sens_knn))/100,2)
+F3.knn <- round(((1+beta_val**2)*((prec_knn*sens_knn)/(beta_val*prec_knn+sens_knn)))/100, 2)
 
 cost.knn <- round(cm.knn_thresh[["table"]][1]*0 + cm.knn_thresh[["table"]][2]*FP_C + cm.knn_thresh[["table"]][3]*FN_C + cm.knn_thresh[["table"]][4]*TP_C,4)
 cost.knn
@@ -690,6 +699,7 @@ prec_RF <- cm.RF_thresh[["byClass"]][["Precision"]]*100
 mtry_best <- rf.fit[["bestTune"]][["mtry"]]
 ntree <- rf.fit[["finalModel"]][["ntree"]]
 F.rf <- round(2*((prec_RF*sens_RF)/(prec_RF+sens_RF))/100,2)
+F3.rf <- round(((1+beta_val**2)*((prec_RF*sens_RF)/(beta_val*prec_RF+sens_RF)))/100, 2)
 
 cost.RF <- round(cm.RF_thresh[["table"]][1]*0 + cm.RF_thresh[["table"]][2]*FP_C + cm.RF_thresh[["table"]][3]*FN_C + cm.RF_thresh[["table"]][4]*TP_C,4)
 cost.RF
@@ -799,6 +809,7 @@ prec_SVM <- cm.SVM_thresh[["byClass"]][["Precision"]]*100
 sigma_best <- round(svm.radial.fit[["bestTune"]][["sigma"]], 4)
 C_best <- svm.radial.fit[["bestTune"]][["C"]]
 F.svm <- round(2*((prec_SVM*sens_SVM)/(prec_SVM+sens_SVM))/100,2)
+F3.svm <- round(((1+beta_val**2)*((prec_SVM*sens_SVM)/(beta_val*prec_SVM+sens_SVM)))/100, 2)
 
 cost.SVM <- round(cm.SVM_thresh[["table"]][1]*0 + cm.SVM_thresh[["table"]][2]*FP_C + cm.SVM_thresh[["table"]][3]*FN_C + cm.SVM_thresh[["table"]][4]*TP_C, 4)
 cost.SVM
@@ -819,15 +830,19 @@ The average accuracy across ten folds is `r round(acc_SVM, 2)` with a standard d
 
 # Hold-Out Test Sample {.tabset}
 
+A model fit to maximize performance on its training data set is not guaranteed to perform well on future data sets. If a model has been overtrained, then there will be significant variation in the performance of the model on future data sets. Here we have a test data set that we will use to test the performance of the final models. There are approximately 2 million data points in this data set. 
+
+In the subsections below, the final fit models will predict the class of the test data. A confusion matrix and ROC curve are shown for each model. A collective summary table and comparison of model performance are located in later sections. 
+
 ```{r Load FHO Data}
 df_FHO <- tibble(read.csv("SYS6018_FHO_Data.csv"))
 df_FHO$Blue_Tarp_or_Not <- factor(df_FHO$Blue_Tarp_or_Not, labels = c("NBT", "BT"))
 df_FHO
 ```
 
-### Logistic Regression {.tabset}
+## Logistic Regression {.tabset}
 
-#### Confusion Matrix 
+### Confusion Matrix 
 
 ```{r FHO LR, results="hold"}
 tic("Log.Reg. Predict")
@@ -849,9 +864,10 @@ spec_LR_FHO <- round(cm.glm_thresh_FHO[["byClass"]][["Specificity"]]*100, 2)
 FDR_LR_FHO <- round(((cm.glm_thresh_FHO[["table"]][2,1])/(cm.glm_thresh_FHO[["table"]][2,1]+cm.glm_thresh_FHO[["table"]][2,2]))*100, 2)
 prec_LR_FHO <- round(cm.glm_thresh_FHO[["byClass"]][["Precision"]]*100, 2)
 F.glm_FHO <- round(2*((prec_LR_FHO*sens_LR_FHO)/(prec_LR_FHO+sens_LR_FHO))/100, 2)
+F3.glm_FHO <- round(((1+beta_val**2)*((prec_LR_FHO*sens_LR_FHO)/(beta_val*prec_LR_FHO+sens_LR_FHO)))/100, 2)
 ```
 
-#### ROC 
+### ROC 
 
 ```{r}
 par(pty="s")
@@ -860,9 +876,9 @@ auc_LR_FHO <- round(glm_roc_FHO[["auc"]], 2)
 ```
 
 
-### LDA {.tabset}
+## LDA {.tabset}
 
-#### Confusion Matrix
+### Confusion Matrix
 
 ```{r FHO LDA, results="hold"}
 tic("LDA Predict")
@@ -883,8 +899,9 @@ spec_lda_FHO <- round(cm.lda_thresh_FHO[["byClass"]][["Specificity"]]*100,2)
 FDR_lda_FHO <- round(((cm.lda_thresh_FHO[["table"]][2,1])/(cm.lda_thresh_FHO[["table"]][2,1]+cm.lda_thresh_FHO[["table"]][2,2]))*100,2)
 prec_lda_FHO <- round(cm.lda_thresh_FHO[["byClass"]][["Precision"]]*100, 2)
 F.lda_FHO <- round(2*((prec_lda_FHO*sens_lda_FHO)/(prec_lda_FHO+sens_lda_FHO))/100, 2)
+F3.lda_FHO <- round(((1+beta_val**2)*((prec_lda_FHO*sens_lda_FHO)/(beta_val*prec_lda_FHO+sens_lda_FHO)))/100, 2)
 ```
-#### ROC 
+### ROC 
 
 ```{r}
 par(pty="s")
@@ -892,9 +909,9 @@ lda_roc_FHO <- roc(df_FHO$Blue_Tarp_or_Not, lda.prob_FHO[,2], plot=TRUE, legacy.
 auc_lda_FHO <- round(lda_roc_FHO[["auc"]],2)
 ```
 
-### QDA {.tabset}
+## QDA {.tabset}
 
-#### Confusion Matrix 
+### Confusion Matrix 
 
 ```{r FHO qDA, results="hold"}
 tic("QDA Predict")
@@ -915,9 +932,10 @@ spec_qda_FHO <- round(cm.qda_thresh_FHO[["byClass"]][["Specificity"]]*100,2)
 FDR_qda_FHO <- round(((cm.qda_thresh_FHO[["table"]][2,1])/(cm.qda_thresh_FHO[["table"]][2,1]+cm.qda_thresh_FHO[["table"]][2,2]))*100,2)
 prec_qda_FHO <- round(cm.qda_thresh_FHO[["byClass"]][["Precision"]]*100,2)
 F.qda_FHO <- round(2*((prec_qda_FHO*sens_qda_FHO)/(prec_qda_FHO+sens_qda_FHO))/100,2)
+F3.qda_FHO <- round(((1+beta_val**2)*((prec_qda_FHO*sens_qda_FHO)/(beta_val*prec_qda_FHO+sens_qda_FHO)))/100, 2)
 ```
 
-#### ROC 
+### ROC 
 
 ```{r}
 par(pty="s")
@@ -926,9 +944,9 @@ auc_qda_FHO <- round(qda_roc_FHO[["auc"]],2)
 ```
 
 
-### KNN {.tabset}
+## KNN {.tabset}
 
-#### Confusion Matrix 
+### Confusion Matrix 
 
 ```{r FHO KNN, results="hold"}
 tic("KNN Predict")
@@ -949,8 +967,9 @@ spec_knn_FHO <- round(cm.knn_thresh_FHO[["byClass"]][["Specificity"]]*100,2)
 FDR_knn_FHO <- round(((cm.knn_thresh_FHO[["table"]][2,1])/(cm.knn_thresh_FHO[["table"]][2,1]+cm.knn_thresh_FHO[["table"]][2,2]))*100,2)
 prec_knn_FHO <- round(cm.knn_thresh_FHO[["byClass"]][["Precision"]]*100,2)
 F.knn_FHO <- round(2*((prec_knn_FHO*sens_knn_FHO)/(prec_knn_FHO+sens_knn_FHO))/100,2)
+F3.knn_FHO <- round(((1+beta_val**2)*((prec_knn_FHO*sens_knn_FHO)/(beta_val*prec_knn_FHO+sens_knn_FHO)))/100, 2)
 ```
-#### ROC 
+### ROC 
 
 ```{r}
 par(pty="s")
@@ -958,9 +977,9 @@ knn_roc_FHO <- roc(df_FHO$Blue_Tarp_or_Not, knn.prob_FHO[,2], plot=TRUE, legacy.
 auc_knn_FHO <- round(knn_roc_FHO[["auc"]],2)
 ```
 
-### RF {.tabset}
+## RF {.tabset}
 
-#### COnfusion Matrix 
+### Confusion Matrix 
 
 ```{r FHO RF, results="hold"}
 tic("RF Predict")
@@ -981,9 +1000,10 @@ spec_RF_FHO <- round(cm.RF_thresh_FHO[["byClass"]][["Specificity"]]*100,2)
 FDR_RF_FHO <- round(((cm.RF_thresh_FHO[["table"]][2,1])/(cm.RF_thresh_FHO[["table"]][2,1]+cm.RF_thresh_FHO[["table"]][2,2]))*100,2)
 prec_RF_FHO <- round(cm.RF_thresh_FHO[["byClass"]][["Precision"]]*100,2)
 F.rf_FHO <- round(2*((prec_RF_FHO*sens_RF_FHO)/(prec_RF_FHO+sens_RF_FHO))/100,2)
+F3.rf_FHO <- round(((1+beta_val**2)*((prec_RF_FHO*sens_RF_FHO)/(beta_val*prec_RF_FHO+sens_RF_FHO)))/100, 2)
 ```
 
-#### ROC 
+### ROC 
 
 ```{r}
 par(pty="s")
@@ -991,9 +1011,9 @@ rf_roc_FHO <- roc(df_FHO$Blue_Tarp_or_Not, RF.prob_FHO[,2], plot=TRUE, legacy.ax
 auc_RF_FHO <- round(rf_roc_FHO[["auc"]],2)
 ```
 
-### SVM {.tabset}
+## SVM {.tabset}
 
-#### Confusion Matrix 
+### Confusion Matrix 
 
 ```{r FHO SVM, results="hold"}
 tic("SVM Predict")
@@ -1014,9 +1034,10 @@ spec_SVM_FHO <- round(cm.SVM_thresh_FHO[["byClass"]][["Specificity"]]*100,2)
 FDR_SVM_FHO <- round(((cm.SVM_thresh_FHO[["table"]][2,1])/(cm.SVM_thresh_FHO[["table"]][2,1]+cm.SVM_thresh_FHO[["table"]][2,2]))*100,2)
 prec_SVM_FHO <- round(cm.SVM_thresh_FHO[["byClass"]][["Precision"]]*100,2)
 F.svm_FHO <- round(2*((prec_SVM_FHO*sens_SVM_FHO)/(prec_SVM_FHO+sens_SVM_FHO))/100,2)
+F3.svm_FHO <- round(((1+beta_val**2)*((prec_SVM_FHO*sens_SVM_FHO)/(beta_val*prec_SVM_FHO+sens_SVM_FHO)))/100, 2)
 ```
 
-#### ROC 
+### ROC 
 
 ```{r}
 par(pty="s")
@@ -1041,14 +1062,14 @@ parallel::stopCluster(cl)
 |         AUC | `r round(auc_knn,2)`%   | `r round(auc_lda,2)`%   | `r round(auc_qda,2)`%   | `r round(auc_LR,2)`%  | `r round(auc_RF,2)`%| `r round(auc_SVM,2)`%   |
 |         ROC |                         |                         |                         |                       |                     |                         |
 |   Threshold | `r round(thresh_knn,5)` | `r round(thresh_lda,5)` | `r round(thresh_qda,5)` | `r round(thresh_LR,5)`| `r round(thresh_RF,5)`|`r round(thresh_SVM,5)`|
-| Sensitivity | `r round(sens_knn,2)`%  | `r round(sens_lda,2)`%  | `r round(sens_qda,2)`%  | `r round(sens_LR,2)`% |`r round(sens_RF,2)`%| `r round(sens_SVM,2)`%  |
-| Specificity | `r round(spec_knn,2)`%  | `r round(spec_lda,2)`%  | `r round(spec_qda,2)`%  | `r round(spec_LR,2)`% |`r round(spec_RF,2)`%|`r round(spec_SVM,2)`%   |
+| Sensitivity=Recall | `r round(sens_knn,2)`%  | `r round(sens_lda,2)`%  | `r round(sens_qda,2)`%  | `r round(sens_LR,2)`% |`r round(sens_RF,2)`%| `r round(sens_SVM,2)`%  |
+| Specificity=1-FPR | `r round(spec_knn,2)`%  | `r round(spec_lda,2)`%  | `r round(spec_qda,2)`%  | `r round(spec_LR,2)`% |`r round(spec_RF,2)`%|`r round(spec_SVM,2)`%   |
 |         FDR | `r round(FDR_knn,2)`%   | `r round(FDR_lda,2)`%   | `r round(FDR_qda,2)`%   | `r round(FDR_LR,2)`%  | `r round(FDR_RF,2)`%|`r round(FDR_SVM,2)`%    |
 |   Precision | `r round(prec_knn,2)`%  | `r round(prec_lda,2)`%  | `r round(prec_qda,2)`%  | `r round(prec_LR,2)`% |`r round(prec_RF,2)`%| `r round(prec_SVM,2)`%  |
 |        Cost | `r round(cost.knn,2)`   | `r round(cost.lda,2)`   | `r round(cost.qda,2)`   | `r round(cost.glm,2)` | `r round(cost.RF,2) ` | `r round(cost.SVM)`   |
-|     F Score | `r round(F.knn, 3)`     | `r round(F.lda, 3)`     | `r round(F.qda, 3)`     | `r round(F.glm, 3)`   | `r round(F.rf, 3)`  | `r round(F.svm, 3)`               | 
+|     F~1~ Score | `r round(F.knn, 3)`     | `r round(F.lda, 3)`     | `r round(F.qda, 3)`     | `r round(F.glm, 3)`   | `r round(F.rf, 3)`  | `r round(F.svm, 3)`               | 
+|     F~3~ Score | `r round(F3.knn, 3)`     | `r round(F3.lda, 3)`     | `r round(F3.qda, 3)`     | `r round(F3.glm, 3)`   | `r round(F3.rf, 3)`  | `r round(F3.svm, 3)`               | 
 
-## {.unlisted .unnumbered} 
 
 ### Table 3 - FHO Performance Summary 
 
@@ -1060,11 +1081,12 @@ parallel::stopCluster(cl)
 |                      AUC | `r auc_knn_FHO`%   | `r auc_lda_FHO`%   | `r auc_qda_FHO`%   | `r auc_LR_FHO`%   | `r auc_RF_FHO`%    | `r auc_SVM_FHO`%   |
 |                      ROC |                    |                    |                    |                   |                   |                   |
 |                Threshold | `r thresh_knn_FHO` | `r thresh_lda_FHO` | `r thresh_qda_FHO` | `r thresh_LR_FHO` | `r thresh_RF_FHO` |`r thresh_SVM_FHO` |
-| Sensitivity=Recall=Power | `r sens_knn_FHO`%  | `r sens_lda_FHO`%  | `r sens_qda_FHO`%  | `r sens_LR_FHO`%  |`r sens_RF_FHO`%    | `r sens_SVM_FHO`%  |
+|       Sensitivity=Recall | `r sens_knn_FHO`%  | `r sens_lda_FHO`%  | `r sens_qda_FHO`%  | `r sens_LR_FHO`%  |`r sens_RF_FHO`%    | `r sens_SVM_FHO`%  |
 |        Specificity=1-FPR | `r spec_knn_FHO`%  | `r spec_lda_FHO`%  | `r spec_qda_FHO`%  | `r spec_LR_FHO`%  |`r spec_RF_FHO`%    |`r spec_SVM_FHO`%   |
 |                      FDR | `r FDR_knn_FHO`%   | `r FDR_lda_FHO`%   | `r FDR_qda_FHO`%   | `r FDR_LR_FHO`%   | `r FDR_RF_FHO`%    |`r FDR_SVM_FHO`%    |
-|            Precision=PPV | `r prec_knn_FHO`%  | `r prec_lda_FHO`%  | `r prec_qda_FHO`%  | `r prec_LR_FHO`%  |`r prec_RF_FHO`%    | `r prec_SVM_FHO`%  |
-|                  F Score | `r round(F.knn_FHO, 3)`| `r round(F.lda_FHO, 3)`| `r round(F.qda_FHO, 3)`| `r round(F.glm_FHO, 3)`| `r round(F.rf_FHO, 3)`| `r round(F.svm_FHO, 3)` |
+|                Precision | `r prec_knn_FHO`%  | `r prec_lda_FHO`%  | `r prec_qda_FHO`%  | `r prec_LR_FHO`%  |`r prec_RF_FHO`%    | `r prec_SVM_FHO`%  |
+|                  F~1~ Score | `r round(F.knn_FHO, 3)`| `r round(F.lda_FHO, 3)`| `r round(F.qda_FHO, 3)`| `r round(F.glm_FHO, 3)`| `r round(F.rf_FHO, 3)`| `r round(F.svm_FHO, 3)` |
+|                  F~3~ Score | `r round(F3.knn_FHO, 3)`| `r round(F3.lda_FHO, 3)`| `r round(F3.qda_FHO, 3)`| `r round(F3.glm_FHO, 3)`| `r round(F3.rf_FHO, 3)`| `r round(F3.svm_FHO, 3)` |
 
 
 **Selection and Interpretation of Tuning Parameters:**
@@ -1081,20 +1103,37 @@ Returning to the explanation of what parameters were chosen, C = 128 and sigma =
 
 # Conclusions 
 
-**1. A discussion of the best performing algorithm(s) in the cross-validation and hold-out data**
+I have reordered the conclusions provided to us in the project description based on what I think provides the best flow for this section.
 
-We can see from Table 2, that the random forest model exhibited the highest accuracy of all six models on the training (cross-validation) data. This is also true for the performance of the RF model on the final hold out data. 
+**A discussion of the relevance of the metrics calculated in the tables to this application context**
 
+The metrics that indicate performance most relevant to our use case are precision and recall. Our primary goal is to correctly identify blue tarps, maximize the true positive rate, so that aid can be provided to the people associated with the blue tarp. Due to the imbalance in proportion between the classes in the data set, we have to be concerned with the false positive rate as well. Identifying all 2,022 blue tarps in our data set (maximizing the TPR) does us no good if we also identify 10,000 not blue tarps (have a high FPR). Taking the time to travel to 10,000 extra and incorrect locations would result in a staggering waste of resources and loss of life as aid workers run out of time to deliver supplies to displaced persons. 
+
+precision and recall. How accuracy doesn't necessarily serve our context well. 
+
+**Discussion of budget and threshold selection **
+
+In our case, our threshold selection is guided by the aim of maximizing the TPR while minimizing the FPR and ensuring that our operation does not exhaust our budget by pursuing incorrectly labeled not blue tarps (false positives) before we reach our success criterion.
+
+**A discussion of the best performing algorithm(s) in the cross-validation and hold-out data**
 
 - which algorithms appear to be reasonable/good choices for use according to cross-validation?
 - which algorithms actually ended up performing well in the hold-out data?
 
+The algorithm that performed the best on the cross-validation data, as decided by recall, precision, cost, and time to fit (metrics were listed in order of importance), was the random forest algorithm. The time to fit table can be found in conclusion 3 for reference. KNN and SVM get honorable mentions based on their recall, precision, and cost metrics. However, their timing metrics were the worst of the six. SVM was 4.3x as long to fit as KNN. While a model will only be fit a few times (first to create the model and later if someone might want to make an adjustment based on a larger future data set to recalibrate the model) time is of the essence so long fit time are considered a con to these models. 
+
+Logistic regression, LDA, and QDA have faster fit times but   
+
+
+
+
+
+We can see from Table 2, that the random forest model exhibited the highest accuracy of all six models on the training (cross-validation) data. This is also true for the performance of the RF model on the final hold out data. 
+
 With the goal of delivering supplies to the greatest number of people without spending too many resources pursuing false positives, 
 (discussion on FHO data why we do this... what the benefits are... potential pitfalls)
 
-
-
-**2. A discussion or analysis justifying why your findings above are compatible or reconcilable**
+**A discussion or analysis justifying why your findings above are compatible or reconcilable**
 
 - Do the answers in both of the above questions agree? (I.e., are they compatible?)  If not, do you have any reasons why they might not agree? (I.e., can they be reconciled somehow?)
 
@@ -1107,7 +1146,11 @@ From ISLR, reasons to consider the use of LDA include:
 * If n is small and the distribution of the predictors X is approximately normal in each of the classes, the linear discriminant model is again more stable than the logistic regression model.
 * Linear discriminant analysis is popular when we have more than two response classes.
 
-**3. A recommendation and rationale regarding which algorithm to use for detection of blue tarps**
+**A recommendation and rationale regarding which algorithm to use for detection of blue tarps**
+
+Based on all the aforementioned metrics and performance, I recommend the random forest model be used to detect blue tarps. **discuss time to fit model and run predictions.** 
+
+In my opinion, the increase in time to fit the random forest model compared to logistic regression, LDA and QDA (see model fitting table below) is justified by the superior recall and precision performance of the RF model. In addition, although the time it takes the RF to predict on new data is longer (about 18 seconds compared to about 6.5 seconds) this difference is not so significant that I'd recommend another model. The performance improvements compared to the faster models is still enough to me to use the RF model. 
 
 Does the method need to reference the full data set in order to make predictions?
 
@@ -1196,15 +1239,15 @@ roc(df_FHO$Blue_Tarp_or_Not, SVM.prob_FHO[,2], plot=TRUE, legacy.axes=TRUE, perc
 legend("bottomright",legend=c("Log. Reg.","LDA", "QDA", "KNN", "RF", "SVM"), col=c("#999999", "#E69F00", "#56B4E9", "#009E73",  "#CC79A7", "#0072B2", "#D55E00"),lwd=3, cex =0.8 )
 ```
 
-**4. A discussion of the relevance of the metrics calculated in the tables to this application context**
+**Future Work** 
 
-precision and recall. How accuracy doesn't necessarily serve our context well. 
+Lidar, precision / recall graph with third axis that calc the cost of the operation at those metrics 
 
-**5. Discussion of budget and threshold selection **
+Algorithmic complexity: Running smaller batch sizes to more quickly get results to the field consistently. 
 
-**6. Future Work** 
+Using libraries online that are built for identifying damage to infrastructure to identify in urban areas where there may be people in need of aid based on building damage. 
 
-Lidar
+Using the same idea to help identify routes that are still able to be used to deliver supplies... 
 
 # Acknowledgements
 
