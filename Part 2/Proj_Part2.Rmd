@@ -1330,47 +1330,44 @@ legend("bottomright",legend=c("Log. Reg.","LDA", "QDA", "KNN", "RF", "SVM"), col
 
 For our logistic regression model, it looks like the threshold chosen for the cross-validation data set is not appropriate for our test data set. The algorithm perfectly predicts the TP at a threshold much lower than 0.03265. Due to that, an incredibly high number of NBT to be classified as BT resulting in a 11% FPR. 
 
-The LDA model performs with a higher TPR on the FHO than the training data set. I am wondering if the FHO data better satisfies the assumptions of LDA resulting in predicted probabilities that are closer to either extreme. 
+The LDA model performs with a higher TPR on the FHO than the training data set. My hypothesis is that the FHO data better satisfies the assumptions of LDA for example its possible that each class is more concentrated within the center of its Gaussian distribution such that fewer predictions are near the decision boundary. If more of the observations are far from the decision boundary (predicted probability is far from the threshold) then you'd see better performance. 
 
-KNN with a much larger data set k = 7 may no longer be the best setting for the tuning parameter, resulting in higher error. 
+The QDA decision boundary that was modeled for the training data set must not match the shape of the decision boundary as well for the FHO data because we're not able to get 100% TPR without at least ~10% FPR. That must mean that about 10% of the NBT data is on the wrong side of the decision boundary. We are seeing improved performance for the LDA model on the FHO. So, I think it's possible that the linear decision boundary does a better job of separating the data.  
 
+For KNN, with a much larger data set k = 7 may no longer be the best setting for the tuning parameter, resulting in higher error. Because there are so many more data points now 7 neighbors probably isn't enough to accurately predict the class in heavy overlap regions. 
 
+For RF, because the model is made by the average of 500 trees if the test data set has a shift in one direction or another or a large number of data points sit on boundaries a significant amount of misclassification could occur.  If that were the case then there would be a percentage of data points you couldn't classify correctly, like were seeing with the FHO data. 
 
-Linear discriminant analysis or (LDA) is another classification technique that models the distribution of the predictors for each class separately uses a linear decision boundary to 
+SVM the margin may be too narrow or incorrectly placed for the test data set or there could be a pocket of data on the wrong side of the margin. Because SVM sets a decision boundary in a point in space if the data shifts around it and violates the margin then a large number of incorrect predictions would result. That could explain the difference in performance and shape of the FHO ROC curve.  
 
-From ISLR, reasons to consider the use of LDA include:
-
-* When the classes are well-separated, the parameter estimates for the logistic regression model are surprisingly unstable. Linear discriminant analysis does not suffer from this problem.
-* If n is small and the distribution of the predictors X is approximately normal in each of the classes, the linear discriminant model is again more stable than the logistic regression model.
-* Linear discriminant analysis is popular when we have more than two response classes.
+I think collectively what I've outlined for most of these methods is that the FHO data set has at least a portion of data that violates the previously defined decision boundary (with the exception of logistic regression) so that the models can't predict the TPR at 100% without a significant percentage of FPs. For logistic regression I think the threshold is the wrong value allowing a large number of FP to be predicted. 
 
 **A recommendation and rationale regarding which algorithm to use for detection of blue tarps**
 
-However, their timing metrics were the worst of the six. SVM was 4.3x as long to fit as KNN. While a model will only be fit a few times (first to create the model and later if someone might want to make an adjustment based on a larger future data set to recalibrate the model) time is of the essence so long fit time are considered a con to these models.  
+If we aren't allowed to make any adjustments to the models and threshold values based on what we learned from the FHO, then I would recommend the LDA model be used to detect blue tarps. All of our models exceed an 80% TPR which is a success, however, some have a FPR that would be too costly (logistic regression) and others have prediction run times that when deployed to scale would never stop running (KNN and SVM). LDA and QDA have similar recall and precision numbers but LDA's recall is 3.3% better. It is possible that this difference could be attributed to the variation between samples. If we had another 2 million data points to test it is possible QDA could come out on top that time. In the end, we have to make a decision and based on what information I have at present, LDA is my pick.
 
-Based on all the aforementioned metrics and performance, I recommend the random forest model be used to detect blue tarps. **discuss time to fit model and run predictions.** 
-
-In my opinion, the increase in time to fit the random forest model compared to logistic regression, LDA and QDA (see model fitting table below) is justified by the superior recall and precision performance of the RF model. In addition, although the time it takes the RF to predict on new data is longer (about 18 seconds compared to about 6.5 seconds) this difference is not so significant that I'd recommend another model. The performance improvements compared to the faster models is still enough to me to use the RF model. 
-
-Does the method need to reference the full data set in order to make predictions?
-
-
-
+If we were allowed to make some additional adjustments, I think the logistic regression model could be refined a little bit more to pare down the FPR and make it a useful model. The AUC for the training and test data sets was 99.9% both times, which means the model does a great job differentiating between the classes. The main issue was the threshold value selection. Having two million data points to train the model on would allow for better threshold selection. 
 
 
 **Future Work** 
 
-Lidar, precision / recall graph with third axis that calc the cost of the operation at those metrics 
+Only having three predictors, RGB values, leave a lot to be desired when making a predictive model. Especially, when the three predictors are in effect an additive singular predictor, a color. Grated, given a disaster situation, having frequently images areas available for review is no small feat and being able to have any data at all is great. There must be a way to further innovate, right? To collect some more data from somewhere to help improve the model. The group from Rochester Institute of Technology used LIDAR data in their predictive models. I know that LIDAR data can be used to classify damage to infrastructure by calculating change in the height of structures from previous satellite imagery. So I think that LIDAR data should be explored in addition to the RGB data. 
 
-Algorithmic complexity: Running smaller batch sizes to more quickly get results to the field consistently. 
+In a similar vein, there has been work done to develop infrastructure damage classifications that can be applied to satellite imagery through machine learning. There is a [data base](https://arxiv.org/abs/1911.09296v1) that has been created to help further this work. It can be used to take before images where structures are identified with polygons and compare them with after images. The changes in the polygons help to classify the scale of damage. I think something of this nature could be used to identify this kind of damage and indicate where displaced persons might be in a somewhat urban environment. I'm wondering if this could be applied in some way to identify tarp polygons. 
 
-Using libraries online that are built for identifying damage to infrastructure to identify in urban areas where there may be people in need of aid based on building damage. 
+If that didn't work then maybe this kind of technology could be used to track if roads and pathways to travel had been effected. You could pull satellite data from before the event, identify the main routes of travel, secondary routes, then feed the algorithm daily image updates to see if any of the paths of travel have been compromised in some way. 
+
+More specifically related to my work, if I had more time I would make precision / recall/ threshold 3-D plots like I made for the ROC curves. It would be interesting to compare the two methods and probably would have helped me pick better threshold values. It was rather late in my analysis that I realized I should focus more on the precision and recall metrics. If you look back in my tables you'll see I've added F~1~ and F~3~ metrics. The F~3~ metric places 3x the emphasis on recall over precision. The closer the score is to 3 the higher the recall and precision, with the emphasis on the recall. I like the F scores and think they are a handy metric when you're concerned about precision and recall for your application, like ours. 
+
+Being able to compare the precision and recall rates with the algorithm execution time helped me when deciding which algorithms would be best suited for this application. Keeping algorithmic complexity in mind, it would likely be worthwhile for aid workers to run new observations through the model in smaller batch sizes so that new predictions could be reported frequently.  
+
+ 
 
 Using the same idea to help identify routes that are still able to be used to deliver supplies... 
 
 # Acknowledgements
 
-A sincere thank you to Professor Schwartz and his excellent instruction this semester. In addition, I'm very grateful to my cohort. They inspired much of my learning and helped to reinforce the rest. 
+A sincere thank you to Professor Schwartz and his excellent instruction this semester. In addition, I'm very grateful to my cohort. Casual discussions about the course concepts with Sam Parsons, Edward Thompson, Michael Davies, Paul Hicks and many others has taught me a lot! They inspired much of my learning and helped to reinforce the rest. 
 
 # References and Works Cited 
 
