@@ -815,29 +815,9 @@ svm.sd <- sd(svm.radial.fit[["resample"]][["Accuracy"]]*100)
 
 The average accuracy across ten folds is `r round(acc_SVM, 2)` with a standard deviation of `r round(svm.sd, 3)`. Based on the k folds accuracy performance, which exhibits variation in the thousands place, we can have confidence in the model performing well even when there is some variation in the data. However, if another data set is significantly different than the training data set there could be a considerable change in performance.    
 
-## K-Folds Out of Sampling Performance 
+          
 
-### Table 2 - Performance Summary
-
-
-#### **Performance Metrics: 10-Fold Cross-Validation Metrics**
-
-|      Method | KNN (k = `r k_knn`) |    LDA    |    QDA    | Log. Regression | Random Forest (mtry = `r mtry_best`, nTrees = `r ntree`) | SVM (sigma = `r sigma_best`, C = `r C_best`)|
-|------------:|:-----------------:|:-----------:|:-----------:|:---------------:|:----------------:|:----------------:|
-|    Accuracy | `r round(acc_knn,2)`%   | `r round(acc_lda,2)`%   | `r round(acc_qda,2)`%   | `r round(acc_LR,2)`%  | `r round(acc_RF,2)`%| `r round(acc_SVM,2)`%   |
-|         AUC | `r round(auc_knn,2)`%   | `r round(auc_lda,2)`%   | `r round(auc_qda,2)`%   | `r round(auc_LR,2)`%  | `r round(auc_RF,2)`%| `r round(auc_SVM,2)`%   |
-|         ROC |                         |                         |                         |                       |                     |                         |
-|   Threshold | `r round(thresh_knn,5)` | `r round(thresh_lda,5)` | `r round(thresh_qda,5)` | `r round(thresh_LR,5)`| `r round(thresh_RF,5)`|`r round(thresh_SVM,5)`|
-| Sensitivity | `r round(sens_knn,2)`%  | `r round(sens_lda,2)`%  | `r round(sens_qda,2)`%  | `r round(sens_LR,2)`% |`r round(sens_RF,2)`%| `r round(sens_SVM,2)`%  |
-| Specificity | `r round(spec_knn,2)`%  | `r round(spec_lda,2)`%  | `r round(spec_qda,2)`%  | `r round(spec_LR,2)`% |`r round(spec_RF,2)`%|`r round(spec_SVM,2)`%   |
-|         FDR | `r round(FDR_knn,2)`%   | `r round(FDR_lda,2)`%   | `r round(FDR_qda,2)`%   | `r round(FDR_LR,2)`%  | `r round(FDR_RF,2)`%|`r round(FDR_SVM,2)`%    |
-|   Precision | `r round(prec_knn,2)`%  | `r round(prec_lda,2)`%  | `r round(prec_qda,2)`%  | `r round(prec_LR,2)`% |`r round(prec_RF,2)`%| `r round(prec_SVM,2)`%  |
-|        Cost | `r round(cost.knn,2)`   | `r round(cost.lda,2)`   | `r round(cost.qda,2)`   | `r round(cost.glm,2)` | `r round(cost.RF,2) ` | `r round(cost.SVM)`   |
-|     F Score | `r round(F.knn, 3)`     | `r round(F.lda, 3)`     | `r round(F.qda, 3)`     | `r round(F.glm, 3)`   | `r round(F.rf, 3)`  | `r round(F.svm, 3)`               |             
-
-# Model Performance 
-
-## Hold-Out Test Sample {.tabset}
+# Hold-Out Test Sample {.tabset}
 
 ```{r Load FHO Data}
 df_FHO <- tibble(read.csv("SYS6018_FHO_Data.csv"))
@@ -1049,6 +1029,25 @@ auc_SVM_FHO <- round(svm_roc_FHO[["auc"]],2)
 parallel::stopCluster(cl)
 ```
 
+# Model Performance 
+
+### Table 2 - Performance Summary
+
+#### **Performance Metrics: 10-Fold Cross-Validation Metrics**
+
+|      Method | KNN (k = `r k_knn`) |    LDA    |    QDA    | Log. Regression | Random Forest (mtry = `r mtry_best`, nTrees = `r ntree`) | SVM (sigma = `r sigma_best`, C = `r C_best`)|
+|------------:|:-----------------:|:-----------:|:-----------:|:---------------:|:----------------:|:----------------:|
+|    Accuracy | `r round(acc_knn,2)`%   | `r round(acc_lda,2)`%   | `r round(acc_qda,2)`%   | `r round(acc_LR,2)`%  | `r round(acc_RF,2)`%| `r round(acc_SVM,2)`%   |
+|         AUC | `r round(auc_knn,2)`%   | `r round(auc_lda,2)`%   | `r round(auc_qda,2)`%   | `r round(auc_LR,2)`%  | `r round(auc_RF,2)`%| `r round(auc_SVM,2)`%   |
+|         ROC |                         |                         |                         |                       |                     |                         |
+|   Threshold | `r round(thresh_knn,5)` | `r round(thresh_lda,5)` | `r round(thresh_qda,5)` | `r round(thresh_LR,5)`| `r round(thresh_RF,5)`|`r round(thresh_SVM,5)`|
+| Sensitivity | `r round(sens_knn,2)`%  | `r round(sens_lda,2)`%  | `r round(sens_qda,2)`%  | `r round(sens_LR,2)`% |`r round(sens_RF,2)`%| `r round(sens_SVM,2)`%  |
+| Specificity | `r round(spec_knn,2)`%  | `r round(spec_lda,2)`%  | `r round(spec_qda,2)`%  | `r round(spec_LR,2)`% |`r round(spec_RF,2)`%|`r round(spec_SVM,2)`%   |
+|         FDR | `r round(FDR_knn,2)`%   | `r round(FDR_lda,2)`%   | `r round(FDR_qda,2)`%   | `r round(FDR_LR,2)`%  | `r round(FDR_RF,2)`%|`r round(FDR_SVM,2)`%    |
+|   Precision | `r round(prec_knn,2)`%  | `r round(prec_lda,2)`%  | `r round(prec_qda,2)`%  | `r round(prec_LR,2)`% |`r round(prec_RF,2)`%| `r round(prec_SVM,2)`%  |
+|        Cost | `r round(cost.knn,2)`   | `r round(cost.lda,2)`   | `r round(cost.qda,2)`   | `r round(cost.glm,2)` | `r round(cost.RF,2) ` | `r round(cost.SVM)`   |
+|     F Score | `r round(F.knn, 3)`     | `r round(F.lda, 3)`     | `r round(F.qda, 3)`     | `r round(F.glm, 3)`   | `r round(F.rf, 3)`  | `r round(F.svm, 3)`               | 
+
 ## {.unlisted .unnumbered} 
 
 ### Table 3 - FHO Performance Summary 
@@ -1080,12 +1079,11 @@ SVM has two tuning parameters C, the cost penalty (which ultimately controls the
 
 Returning to the explanation of what parameters were chosen, C = 128 and sigma = 9.020118. These were the parameters that created the best fit of the model from the 10 options provided by tuneLength. If I had more time to play with the project I would investigate the difference in performance between a model fit with C = 32 and C = 128 on the FHO data. There's only 0.0000475% difference in the accuracy of models fit with those C values. A smaller C would result in a larger margin. It is possible that with a wider margin there could be better performance in predicting the FHO data. 
 
-
 # Conclusions 
 
 **1. A discussion of the best performing algorithm(s) in the cross-validation and hold-out data**
 
-We can see from Table 2, that the random forest model exhibited the highest accuracy of all six models on the training (cross-validation) data. This is also true for the 
+We can see from Table 2, that the random forest model exhibited the highest accuracy of all six models on the training (cross-validation) data. This is also true for the performance of the RF model on the final hold out data. 
 
 
 - which algorithms appear to be reasonable/good choices for use according to cross-validation?
@@ -1167,7 +1165,7 @@ Run time variation between devices, qualitative measure only. Just make note of 
 * Processor:	Intel(R) Core(TM) i7-10875H CPU @ 2.30GHz, 2304 Mhz, 8 Core(s), 16 Logical Processor(s)
 * RAM:	32.0 GB
 
-```{r, echo=FALSE, results="hold"}
+```{r, echo=FALSE, results='hide'}
 par(mfrow=c(1,2), pty="s", cex=0.8)
 roc(df_factor $Blue_Tarp_or_Not, glm.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col=cbPalette[1], lwd=3, print.auc=TRUE, print.auc.y=30,print.auc.x=60, main="Training ROC Curve") 
 
