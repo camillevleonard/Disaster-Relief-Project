@@ -1107,7 +1107,26 @@ I have reordered the conclusions provided to us in the project description based
 
 **A discussion of the relevance of the metrics calculated in the tables to this application context**
 
+Precision and Recall 
+
 The metrics that indicate performance most relevant to our use case are precision and recall. Our primary goal is to correctly identify blue tarps, maximize the true positive rate, so that aid can be provided to the people associated with the blue tarp. Due to the imbalance in proportion between the classes in the data set, we have to be concerned with the false positive rate as well. Identifying all 2,022 blue tarps in our data set (maximizing the TPR) does us no good if we also identify 10,000 not blue tarps (have a high FPR). Taking the time to travel to 10,000 extra and incorrect locations would result in a staggering waste of resources and loss of life as aid workers run out of time to deliver supplies to displaced persons. 
+
+Accuracy
+
+Accuracy is a misleading metric for our application. A high accuracy, the percentage of predictions that are correct, does not guarantee we will be able to effectively achieve the goals of the use case. This is especially true for this project, where achieving a high true positive rate is paramount to successfully executing the mission but the data set is imbalanced. The further we push the threshold to maximize the TPR the larger the number of false positives we will predict with the model. False positives cost us resources of which we don't have an unlimited supply. They also waste time, another resource we are limited in. Therefore, a high accuracy does not provide us with the information we need to know our model will help us achieve our primary objective.    
+
+AUC 
+
+The area under the curve acts like a quick check as we compare performance between models. This metric quantifies how well a model is able to differentiate between classes. It is a good piece of information but not a critical metric that will help us decide which model will perform the best for this application. 
+
+ROC and Threshold
+
+
+
+Specificity
+
+FDR
+
 
 precision and recall. How accuracy doesn't necessarily serve our context well. 
 
