@@ -128,7 +128,7 @@ We can see from the output that there aren't any NA values that need to be remov
 
 ### Scatter and Correlation
 
-```{r, message=FALSE}
+```{r 3, message=FALSE}
 #Reference [1]
 # The palette with grey:
 cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73",  "#CC79A7", "#0072B2", "#D55E00")
@@ -155,7 +155,7 @@ All three predictors are highly correlated with one another, which is unsurprisi
 
 ### 3D Scatter
 
-```{r}
+```{r fig }
 fig <- plot_ly(df, x=~Red, y=~Green, z=~Blue, color=~Class, colors=c("#999999", "#E69F00", "#56B4E9", "#009E73",  "#CC79A7")) #Reference: https://plotly.com/r/3d-scatter-plots/ https://plotly.com/r/3d-surface-plots/
 fig <- fig %>% add_markers()
 fig <- fig %>% layout(scene=list(xaxis=list(title="Red"),
@@ -191,7 +191,7 @@ attach(df_factor)
 
 ### 3D Scatter - Binary
 
-```{r}
+```{r fig 1}
 fig1 <- plot_ly(df_factor, x=~Red, y=~Green, z=~Blue, color=~Blue_Tarp_or_Not, colors = cbPalette) #Reference: https://plotly.com/r/3d-scatter-plots/ https://plotly.com/r/3d-surface-plots/
 fig1 <- fig1 %>% add_markers()
 fig1 <- fig1 %>% layout(scene=list(xaxis=list(title="Red"),
@@ -548,7 +548,7 @@ knn.fit
 
 The model fit indicates that the highest accuracy is obtained when k is 7. 
 
-```{r}
+```{r knn plot}
 plot(knn.fit)
 ```
 
@@ -647,7 +647,7 @@ rf.fit
 
 The RF model was fit on 500 trees and the tuning parameter mtry=2 (number of variables chosen at each sample split) was selected. The difference in accuracy between mtry=2 and mtry=3 incredibly small (hundred thousandths place). 
 
-```{r}
+```{r RF plot}
 plot(rf.fit)
 ```
 
@@ -751,7 +751,7 @@ summary(svm.radial.fit)
  
 ```
 
-```{r}
+```{r SVM plot}
 plot(svm.radial.fit)
 
 ```
@@ -869,7 +869,7 @@ F3.glm_FHO <- round(((1+beta_val**2)*((prec_LR_FHO*sens_LR_FHO)/(beta_val*prec_L
 
 ### ROC 
 
-```{r}
+```{r LR FHO ROC}
 par(pty="s")
 glm_roc_FHO <- roc(df_FHO$Blue_Tarp_or_Not, glm.prob_FHO[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#0072B2", lwd=4, print.auc=TRUE, main="Log. Reg. FHO ROC Curve") 
 auc_LR_FHO <- round(glm_roc_FHO[["auc"]], 2)
@@ -903,7 +903,7 @@ F3.lda_FHO <- round(((1+beta_val**2)*((prec_lda_FHO*sens_lda_FHO)/(beta_val*prec
 ```
 ### ROC 
 
-```{r}
+```{r LDA FHO ROC}
 par(pty="s")
 lda_roc_FHO <- roc(df_FHO$Blue_Tarp_or_Not, lda.prob_FHO[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#0072B2", lwd=4, print.auc=TRUE, main="LDA FHO ROC Curve") 
 auc_lda_FHO <- round(lda_roc_FHO[["auc"]],2)
@@ -937,7 +937,7 @@ F3.qda_FHO <- round(((1+beta_val**2)*((prec_qda_FHO*sens_qda_FHO)/(beta_val*prec
 
 ### ROC 
 
-```{r}
+```{r QDA FHO ROC}
 par(pty="s")
 qda_roc_FHO <- roc(df_FHO$Blue_Tarp_or_Not, qda.prob_FHO[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#0072B2", lwd=4, print.auc=TRUE, main="QDA FHO ROC Curve") 
 auc_qda_FHO <- round(qda_roc_FHO[["auc"]],2)
@@ -971,7 +971,7 @@ F3.knn_FHO <- round(((1+beta_val**2)*((prec_knn_FHO*sens_knn_FHO)/(beta_val*prec
 ```
 ### ROC 
 
-```{r}
+```{r KNN FHO ROC}
 par(pty="s")
 knn_roc_FHO <- roc(df_FHO$Blue_Tarp_or_Not, knn.prob_FHO[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#0072B2", lwd=4, print.auc=TRUE, main="KNN FHO ROC Curve") 
 auc_knn_FHO <- round(knn_roc_FHO[["auc"]],2)
@@ -1005,7 +1005,7 @@ F3.rf_FHO <- round(((1+beta_val**2)*((prec_RF_FHO*sens_RF_FHO)/(beta_val*prec_RF
 
 ### ROC 
 
-```{r}
+```{r RF FHO ROC}
 par(pty="s")
 rf_roc_FHO <- roc(df_FHO$Blue_Tarp_or_Not, RF.prob_FHO[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#0072B2", lwd=4, print.auc=TRUE, main="RF FHO ROC Curve") 
 auc_RF_FHO <- round(rf_roc_FHO[["auc"]],2)
@@ -1039,14 +1039,14 @@ F3.svm_FHO <- round(((1+beta_val**2)*((prec_SVM_FHO*sens_SVM_FHO)/(beta_val*prec
 
 ### ROC 
 
-```{r}
+```{r SVM FHO ROC}
 par(pty="s")
 svm_roc_FHO <- roc(df_FHO$Blue_Tarp_or_Not, SVM.prob_FHO[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col="#0072B2", lwd=4, print.auc=TRUE, main="SVM FHO ROC Curve") 
 auc_SVM_FHO <- round(svm_roc_FHO[["auc"]],2)
 ```
 
 
-```{r, echo=FALSE}
+```{r STOP CLUSTER, echo=FALSE}
 parallel::stopCluster(cl)
 ```
 
@@ -1210,7 +1210,7 @@ Based on the cross-validation data set recall and precision, I rank the models f
 5. QDA - high recall, low precision
 6. LDA - lowest recall, lowest precision, over budget
 
-The algorithm that performed the best on the cross-validation data, as decided by recall, precision, cost, and time to fit (metrics were listed in order of importance), was the random forest algorithm. KNN and SVM get honorable mentions based on their recall, precision, and cost metrics. 
+The algorithm that performed the best on the cross-validation data, as decided by recall, precision, cost (metrics were listed in order of importance), was the random forest algorithm. KNN and SVM get honorable mentions based on their recall, precision, and cost metrics. 
 
 Logistic regression, LDA, and QDA have low precision percentages compared to RF, KNN, and SVM. This can be explained the large number of FP predicted by those models compared to RF, KNN, SVM. 
 
@@ -1224,7 +1224,7 @@ Logistic regression, LDA, and QDA have low precision percentages compared to RF,
 |QDA    |1,412| 2,008| 
 
 
-Based on the cross-validation data set recall, precision, I rank the models from highest to least likely to recommend (notes next to name indicate what I considered as I chose the rankings):
+Based on the final hold out data set recall, precision, I rank the models from highest to least likely to recommend (notes next to name indicate what I considered as I chose the rankings):
 
 1. LDA - second best recall (95.7%), third best precision 
 2. Random forest - okay recall (83.5%), best precision
@@ -1233,17 +1233,15 @@ Based on the cross-validation data set recall, precision, I rank the models from
 5. SVM - worst recall, okay precision
 6. Logistic regression - perfect recall, 222,000+ FP making for worst precision 
 
-All qualitative descriptions are relative to the five other models. I am not impressed with any of the models when it comes to their performance. I felt like I had to place LDA at the top of the list since it had a small number of FN and okay FP numbers. 
+All qualitative descriptions are relative to the five other models. I am not impressed with any of the models when it comes to their performance. I decided to place LDA at the top of the list since it had a small number of FN and okay FP numbers. 
 
 **A discussion or analysis justifying why your findings above are compatible or reconcilable**
-
-- Do the answers in both of the above questions agree? (I.e., are they compatible?)  If not, do you have any reasons why they might not agree? (I.e., can they be reconciled somehow?)
 
 I am a bit surprised by the difference in model performance between the training and test data sets. I wouldn't say that the performance was very consistent for the models between data sets. I have to consider whether there is a difference between the training and test sets or if my models were overfit to training data set. 
 
 Below the training data set and the FHO data set (a subset) are graphed. I don't see a significant difference in the separation of the two classes. 
 
-```{r Data Subset for Quick Runs, eval=FALSE, echo=FALSE}
+```{r Data Subset,  echo=FALSE}
 set.seed(4)
 #In order to make run times faster when tuning parameters subset data with 20%
 trainIndex <- createDataPartition(df_FHO$Blue_Tarp_or_Not, p=0.05,
@@ -1254,13 +1252,13 @@ df_subset <- df_FHO[trainIndex,]
 
 Training Data Set 
 
-```{r}
+```{r reprint}
 fig1
 ```
 
 Subset of the Test Data Set 
 
-```{r}
+```{r fig end}
 
 
 attach(df_FHO)
@@ -1273,7 +1271,7 @@ fig_end <- fig_end %>% layout(scene=list(xaxis=list(title="Red"),
 fig_end
 ```
 
-```{r, message=FALSE}
+```{r scatter FHO, message=FALSE}
 #Reference [1]
 # The palette with grey:
 cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73",  "#CC79A7", "#0072B2", "#D55E00")
@@ -1295,9 +1293,9 @@ p
 
 ```
 
-Let's see what the ROC curves might tell us about how our thresholding could be factoring into the observed difference in performance. 
+Let's see what the ROC curves might tell us about the observed difference in performance. 
 
-```{r, echo=FALSE, results='hide'}
+```{r ROC Comp, echo=FALSE, results='hide'}
 par(mfrow=c(1,2), pty="s", cex=0.8)
 roc(df_factor $Blue_Tarp_or_Not, glm.prob[,2], plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Positive Percentage", col=cbPalette[1], lwd=3, print.auc=TRUE, print.auc.y=30,print.auc.x=60, main="Training ROC Curve") 
 
@@ -1328,7 +1326,7 @@ roc(df_FHO$Blue_Tarp_or_Not, SVM.prob_FHO[,2], plot=TRUE, legacy.axes=TRUE, perc
 legend("bottomright",legend=c("Log. Reg.","LDA", "QDA", "KNN", "RF", "SVM"), col=c("#999999", "#E69F00", "#56B4E9", "#009E73",  "#CC79A7", "#0072B2", "#D55E00"),lwd=3, cex =0.8 )
 ```
 
-For our logistic regression model, it looks like the threshold chosen for the cross-validation data set is not appropriate for our test data set. The algorithm perfectly predicts the TP at a threshold much lower than 0.03265. Due to that, an incredibly high number of NBT to be classified as BT resulting in a 11% FPR. 
+For our logistic regression model, it looks like the threshold chosen for the cross-validation data set is not appropriate for our test data set. The algorithm perfectly predicts the TP at a threshold higher than 0.03265. Due to that, an incredibly high number of NBT to be classified as BT resulting in a 11% FPR. 
 
 The LDA model performs with a higher TPR on the FHO than the training data set. My hypothesis is that the FHO data better satisfies the assumptions of LDA for example its possible that each class is more concentrated within the center of its Gaussian distribution such that fewer predictions are near the decision boundary. If more of the observations are far from the decision boundary (predicted probability is far from the threshold) then you'd see better performance. 
 
@@ -1348,10 +1346,9 @@ If we aren't allowed to make any adjustments to the models and threshold values 
 
 If we were allowed to make some additional adjustments, I think the logistic regression model could be refined a little bit more to pare down the FPR and make it a useful model. The AUC for the training and test data sets was 99.9% both times, which means the model does a great job differentiating between the classes. The main issue was the threshold value selection. Having two million data points to train the model on would allow for better threshold selection. 
 
-
 **Future Work** 
 
-Only having three predictors, RGB values, leave a lot to be desired when making a predictive model. Especially, when the three predictors are in effect an additive singular predictor, a color. Grated, given a disaster situation, having frequently images areas available for review is no small feat and being able to have any data at all is great. There must be a way to further innovate, right? To collect some more data from somewhere to help improve the model. The group from Rochester Institute of Technology used LIDAR data in their predictive models. I know that LIDAR data can be used to classify damage to infrastructure by calculating change in the height of structures from previous satellite imagery. So I think that LIDAR data should be explored in addition to the RGB data. 
+Only having three predictors, RGB values, leave a lot to be desired when making a predictive model. Especially, when the three predictors are in effect an additive singular predictor, a color. Grated, given a disaster situation, having frequently imaged areas available for review is no small feat and being able to have any data at all is great. There must be a way to further innovate, right? To collect some more data from somewhere to help improve the model. The group from Rochester Institute of Technology used LIDAR data in their predictive models. I know that LIDAR data can be used to classify damage to infrastructure by calculating change in the height of structures from previous satellite imagery. So I think that LIDAR data should be explored in addition to the RGB data. 
 
 In a similar vein, there has been work done to develop infrastructure damage classifications that can be applied to satellite imagery through machine learning. There is a [data base](https://arxiv.org/abs/1911.09296v1) that has been created to help further this work. It can be used to take before images where structures are identified with polygons and compare them with after images. The changes in the polygons help to classify the scale of damage. I think something of this nature could be used to identify this kind of damage and indicate where displaced persons might be in a somewhat urban environment. I'm wondering if this could be applied in some way to identify tarp polygons. 
 
@@ -1359,11 +1356,7 @@ If that didn't work then maybe this kind of technology could be used to track if
 
 More specifically related to my work, if I had more time I would make precision / recall/ threshold 3-D plots like I made for the ROC curves. It would be interesting to compare the two methods and probably would have helped me pick better threshold values. It was rather late in my analysis that I realized I should focus more on the precision and recall metrics. If you look back in my tables you'll see I've added F~1~ and F~3~ metrics. The F~3~ metric places 3x the emphasis on recall over precision. The closer the score is to 3 the higher the recall and precision, with the emphasis on the recall. I like the F scores and think they are a handy metric when you're concerned about precision and recall for your application, like ours. 
 
-Being able to compare the precision and recall rates with the algorithm execution time helped me when deciding which algorithms would be best suited for this application. Keeping algorithmic complexity in mind, it would likely be worthwhile for aid workers to run new observations through the model in smaller batch sizes so that new predictions could be reported frequently.  
-
- 
-
-Using the same idea to help identify routes that are still able to be used to deliver supplies... 
+Being able to compare the precision and recall rates with the algorithm execution time helped me when deciding which algorithms would be best suited for this application. Keeping algorithmic complexity in mind, it would likely be worthwhile for aid workers to run new observations through the model in smaller batch sizes so that new predictions could be reported frequently to the field.  It would be even better if the field kept track of whether a location was a TP or FP. Then that data, now validated, could be used to retrain and update the model.  
 
 # Acknowledgements
 
@@ -1387,9 +1380,10 @@ A sincere thank you to Professor Schwartz and his excellent instruction this sem
 * An Introduction to Statistical Learning by G. James, D. Witten, T. Hastie, and R. Tibshirani 
 * ROC curves in R https://www.youtube.com/watch?v=qcvAqAH60Yw&t=670s&ab_channel=StatQuestwithJoshStarmer 
 * https://medium.com/swlh/roc-curve-and-auc-detailed-understanding-and-r-proc-package-86d1430a3191 
+* https://towardsdatascience.com/beyond-accuracy-precision-and-recall-3da06bea9f6c 
 
 
-```{r, echo=FALSE}
+```{r end, echo=FALSE}
 toc()
 ```
  
